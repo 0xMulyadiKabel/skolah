@@ -1,0 +1,43 @@
+<div id="live-checkin-card" class="bg-white border border-gray-200 rounded-2xl p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-sm font-extrabold">Live Check-in Terbaru</h3>
+    <a href="#"
+       hx-get="{% url 'dashboard:live_checkin_partial' %}"
+       hx-target="#live-checkin-card"
+       hx-swap="outerHTML"
+       hx-indicator="#refresh-spinner"
+       class="text-xs font-bold text-emerald-800 cursor-pointer">
+      <span id="refresh-spinner" class="htmx-indicator">⏳</span> Refresh
+    </a>
+  </div>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+        <th class="pb-3">Siswa</th>
+        <th class="pb-3">Kelas</th>
+        <th class="pb-3">Jam Masuk</th>
+        <th class="pb-3">Metode</th>
+        <th class="pb-3">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in live_checkin %}
+      <tr class="border-b border-gray-100 last:border-0">
+        <td class="py-3 font-bold">{{ a.siswa.nama }}</td>
+        <td class="py-3">{{ a.siswa.kelas.nama_kelas }}</td>
+        <td class="py-3 font-mono">{{ a.jam_masuk|time:"H:i:s" }}</td>
+        <td class="py-3">{{ a.get_metode_masuk_display }}</td>
+        <td class="py-3">
+          {% if a.status == 'terlambat' %}
+            <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+          {% else %}
+            <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="py-6 text-center text-gray-400 text-sm">Belum ada siswa yang absen hari ini.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,40 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:siswa_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Data Siswa</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <form method="get" class="flex items-center justify-between gap-4 mb-5 flex-wrap">
+      <input type="text" name="q" value="{{ q }}" placeholder="Cari nama kelas atau wali kelas..."
+             class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm w-72 focus:border-emerald-700 focus:outline-none">
+      <div class="flex gap-2">
+        <button type="submit" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">Cari</button>
+        <a href="{% url 'akademik:kelas_create' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">+ Tambah Kelas</a>
+      </div>
+    </form>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Nama Kelas</th>
+          <th class="pb-3">Wali Kelas</th>
+          <th class="pb-3">Jumlah Siswa</th>
+          <th class="pb-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for k in kelas_list %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ k.nama_kelas }}</td>
+          <td class="py-3">{{ k.wali_kelas.nama|default:"— belum ditentukan" }}</td>
+          <td class="py-3 font-mono">{{ k.siswa_list.count }}</td>
+          <td class="py-3">
+            <a href="{% url 'akademik:kelas_update' k.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada kelas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

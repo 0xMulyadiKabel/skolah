@@ -1,0 +1,46 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-5">
+      <p class="text-sm font-bold text-gray-500">Periode: {{ periode_label }}</p>
+      <a href="{% url 'absensi:laporan_export_csv' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">⬇ Export CSV</a>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Kelas</th>
+          <th class="pb-3">Total Siswa</th>
+          <th class="pb-3">Hadir</th>
+          <th class="pb-3">Izin/Sakit</th>
+          <th class="pb-3">Alpa</th>
+          <th class="pb-3">% Kehadiran</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ r.kelas.nama_kelas }}</td>
+          <td class="py-3 font-mono">{{ r.total_siswa }}</td>
+          <td class="py-3 font-mono">{{ r.hadir }}</td>
+          <td class="py-3 font-mono">{{ r.izin }}</td>
+          <td class="py-3 font-mono">{{ r.alpa }}</td>
+          <td class="py-3">
+            {% if r.persen >= 90 %}
+              <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">{{ r.persen }}%</span>
+            {% elif r.persen >= 75 %}
+              <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">{{ r.persen }}%</span>
+            {% else %}
+              <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">{{ r.persen }}%</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-6 text-center text-gray-400">Belum ada data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="text-xs text-gray-400 mt-4">Catatan: "Alpa" di laporan ini hanya menghitung baris yang eksplisit tercatat berstatus alpa. Siswa yang belum sempat absen sama sekali (tidak punya baris AbsensiHarian) belum ikut terhitung di sini — perlu disempurnakan di iterasi berikutnya.</p>
+  </div>
+{% endblock %}

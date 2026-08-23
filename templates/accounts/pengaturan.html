@@ -1,0 +1,82 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="grid grid-cols-2 gap-5">
+
+      <!-- JAM & TOLERANSI -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-6">
+        <h3 class="text-sm font-extrabold mb-4">Jam & Toleransi Absensi</h3>
+
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-2">Jam Masuk</label>
+            {{ form.jam_masuk }}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-2">Jam Pulang</label>
+            {{ form.jam_pulang }}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 mb-2">Toleransi Keterlambatan (menit)</label>
+          {{ form.toleransi_keterlambatan_menit }}
+        </div>
+
+        <div class="mb-2">
+          <label class="block text-xs font-bold text-gray-500 mb-2">Hari Aktif Sekolah</label>
+          <div class="flex gap-3 flex-wrap text-xs font-bold">
+            <label class="flex items-center gap-1.5">{{ form.aktif_senin }} Sen</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_selasa }} Sel</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_rabu }} Rab</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_kamis }} Kam</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_jumat }} Jum</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_sabtu }} Sab</label>
+            <label class="flex items-center gap-1.5">{{ form.aktif_minggu }} Min</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- VERIFIKASI -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-6">
+        <h3 class="text-sm font-extrabold mb-4">Verifikasi Anti-Titip-Absen</h3>
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 mb-2">Metode Verifikasi Gerbang</label>
+          {{ form.metode_verifikasi }}
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-2">Radius Geofence dari Sekolah (meter)</label>
+          {{ form.radius_geofence_meter }}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SESI SHOLAT -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-6 mt-5">
+      <h3 class="text-sm font-extrabold mb-1">Sesi Sholat yang Dipantau</h3>
+      <p class="text-xs text-gray-400 mb-4">Aktifkan sholat yang ingin didata kehadirannya. Siswa hanya diminta absen untuk sesi yang aktif di sini.</p>
+
+      {% for sesi in sesi_list %}
+      <div class="flex items-center gap-5 py-3 border-b border-gray-100 last:border-0">
+        <div class="w-32 text-sm font-bold">{{ sesi.get_nama_sholat_display }}</div>
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="sesi_{{ sesi.id }}_aktif" {% if sesi.aktif %}checked{% endif %} class="h-4 w-4 rounded border-gray-300">
+          <span class="text-xs font-bold text-gray-500">Aktif</span>
+        </label>
+        <input type="time" name="sesi_{{ sesi.id }}_mulai" value="{{ sesi.jendela_mulai|time:'H:i' }}"
+               class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+        <span class="text-xs text-gray-400">s/d</span>
+        <input type="time" name="sesi_{{ sesi.id }}_selesai" value="{{ sesi.jendela_selesai|time:'H:i' }}"
+               class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+      </div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="mt-5 px-6 py-3 rounded-xl bg-emerald-800 text-white font-bold hover:bg-emerald-900 transition">
+      Simpan Perubahan
+    </button>
+  </form>
+{% endblock %}

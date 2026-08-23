@@ -1,0 +1,108 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+
+    <form method="get" class="flex items-center justify-between gap-4 mb-5 flex-wrap">
+      <div class="flex items-center gap-3 flex-wrap">
+        <input type="text" name="q" value="{{ q }}" placeholder="Cari nama atau NIS siswa..."
+               class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm w-64 focus:border-emerald-700 focus:outline-none">
+        <select name="kelas" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:border-emerald-700 focus:outline-none">
+          <option value="">Semua Kelas</option>
+          {% for k in kelas_list %}
+            <option value="{{ k.id }}" {% if kelas_id_selected == k.id|stringformat:"s" %}selected{% endif %}>{{ k.nama_kelas }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">Cari</button>
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'akademik:kelas_list' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">Kelola Kelas</a>
+        <a href="{% url 'akademik:siswa_create' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">+ Tambah Siswa</a>
+      </div>
+    </form>
+
+    <form method="post" action="{% url 'akademik:siswa_bulk_nonaktifkan' %}" id="bulk-form">
+      {% csrf_token %}
+      <div class="flex items-center justify-between mb-3">
+        <p id="bulk-info" class="text-xs text-gray-400">Centang siswa untuk aksi massal.</p>
+        <button type="submit" id="bulk-btn" disabled
+                onclick="return confirm('Nonaktifkan siswa yang dicentang?');"
+                class="px-4 py-2 rounded-lg bg-red-50 text-red-600 text-xs font-bold opacity-40 cursor-not-allowed disabled:hover:bg-red-50">
+          Nonaktifkan Terpilih
+        </button>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+            <th class="pb-3 w-8"><input type="checkbox" id="check-all" class="h-4 w-4 rounded border-gray-300"></th>
+            <th class="pb-3">Siswa</th>
+            <th class="pb-3">NIS</th>
+            <th class="pb-3">Kelas</th>
+            <th class="pb-3">Jenis Kelamin</th>
+            <th class="pb-3">Status</th>
+            <th class="pb-3">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in page_obj %}
+          <tr class="border-b border-gray-100 last:border-0">
+            <td class="py-3"><input type="checkbox" name="siswa_ids" value="{{ s.pk }}" class="row-check h-4 w-4 rounded border-gray-300"></td>
+            <td class="py-3 font-bold">{{ s.nama }}</td>
+            <td class="py-3 font-mono">{{ s.nis|default:"—" }}</td>
+            <td class="py-3">{{ s.kelas.nama_kelas }}</td>
+            <td class="py-3">{{ s.get_jenis_kelamin_display }}</td>
+            <td class="py-3">
+              {% if s.aktif %}
+                <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Aktif</span>
+              {% else %}
+                <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">Nonaktif</span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              <a href="{% url 'akademik:siswa_update' s.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="py-6 text-center text-gray-400">Belum ada data siswa yang cocok.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+      <p class="text-xs text-gray-400">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }} — {{ page_obj.paginator.count }} siswa total</p>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&kelas={{ kelas_id_selected }}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">← Sebelumnya</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&kelas={{ kelas_id_selected }}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Berikutnya →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const checkAll = document.getElementById('check-all');
+    const rowChecks = document.querySelectorAll('.row-check');
+    const bulkBtn = document.getElementById('bulk-btn');
+    const bulkInfo = document.getElementById('bulk-info');
+
+    function updateBulkState() {
+      const checked = document.querySelectorAll('.row-check:checked').length;
+      bulkBtn.disabled = checked === 0;
+      bulkBtn.classList.toggle('opacity-40', checked === 0);
+      bulkBtn.classList.toggle('cursor-not-allowed', checked === 0);
+      bulkInfo.textContent = checked > 0 ? checked + ' siswa dipilih.' : 'Centang siswa untuk aksi massal.';
+    }
+
+    checkAll.addEventListener('change', () => {
+      rowChecks.forEach(cb => cb.checked = checkAll.checked);
+      updateBulkState();
+    });
+    rowChecks.forEach(cb => cb.addEventListener('change', updateBulkState));
+  </script>
+{% endblock %}

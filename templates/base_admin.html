@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} — Absensi Digital</title>
+  <link href="{% static 'css/output.css' %}" rel="stylesheet">
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+</head>
+<body class="bg-stone-100 text-gray-900">
+
+  <div class="flex min-h-screen">
+    <!-- SIDEBAR -->
+    <aside class="w-60 shrink-0 bg-emerald-950 text-white flex flex-col p-4">
+      <div class="flex items-center gap-3 px-2 pb-6">
+        <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">🕌</div>
+        <div>
+          <div class="text-sm font-extrabold leading-tight">Absensi Digital</div>
+          <div class="text-[10px] opacity-60">{{ request.user.school.nama|default:"Semua Sekolah" }}</div>
+        </div>
+      </div>
+
+      <nav class="flex flex-col gap-1 flex-1">
+        <a href="{% url 'dashboard:index' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.app_name == 'dashboard' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          📊 Dashboard Sekolah
+        </a>
+        <a href="{% url 'akademik:siswa_list' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.url_name == 'siswa_list' or request.resolver_match.url_name == 'siswa_create' or request.resolver_match.url_name == 'siswa_update' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          🎓 Data Siswa
+        </a>
+        <a href="{% url 'akademik:akun_guru_list' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if 'akun_' in request.resolver_match.url_name %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          👥 Guru & Orang Tua
+        </a>
+        <a href="{% url 'perizinan:izin_list' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.app_name == 'perizinan' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          ✅ Approval Izin
+        </a>
+        <a href="{% url 'absensi:laporan_sekolah' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.app_name == 'absensi' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          📄 Laporan Sekolah
+        </a>
+        <a href="{% url 'accounts:pengaturan' %}"
+           class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.url_name == 'pengaturan' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">
+          ⚙️ Pengaturan
+        </a>
+      </nav>
+
+      <div class="flex items-center gap-3 bg-white/5 rounded-xl p-3 mt-3">
+        <div class="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center text-xs font-bold">
+          {{ request.user.username|slice:":2"|upper }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold truncate">{{ request.user.username }}</div>
+          <div class="text-[10px] opacity-60">Admin Sekolah</div>
+        </div>
+      </div>
+      <form method="post" action="{% url 'accounts:logout' %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-left px-3 py-2 text-xs font-bold text-white/60 hover:text-white">
+          ⏻ Keluar
+        </button>
+      </form>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="h-[68px] bg-white border-b border-gray-200 flex items-center justify-between px-7 shrink-0">
+        <h2 class="text-lg font-extrabold">{{ page_title }}</h2>
+      </header>
+      <main class="p-7 flex-1 overflow-y-auto">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="mb-5 px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 flex items-center justify-between">
+              <span>{{ message }}</span>
+              <button type="button" onclick="this.parentElement.remove()" class="text-emerald-700/50 hover:text-emerald-700 ml-4">✕</button>
+            </div>
+          {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+</body>
+</html>
