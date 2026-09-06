@@ -63,6 +63,21 @@ class GuruLoginView(auth_views.LoginView):
         return reverse_lazy("guru:dashboard")
 
 
+def ortu_required(view_func):
+    """Sama seperti decorator lain, khusus role='orang_tua'."""
+    decorated = login_required(
+        user_passes_test(lambda u: u.role == "orang_tua", login_url=reverse_lazy("accounts:ortu_login"))(view_func)
+    )
+    return decorated
+
+
+class OrtuLoginView(auth_views.LoginView):
+    template_name = "registration/login_ortu.html"
+
+    def get_success_url(self):
+        return reverse_lazy("ortu:beranda")
+
+
 @admin_required
 def pengaturan(request):
     # Import di sini (bukan di atas) buat hindari circular import,

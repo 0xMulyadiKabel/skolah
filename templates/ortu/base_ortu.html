@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} — Portal Orang Tua</title>
+  <link href="{% static 'css/output.css' %}" rel="stylesheet">
+</head>
+<body class="bg-stone-100 text-gray-900">
+
+  <div class="bg-emerald-950 text-white px-7 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">🕌</div>
+      <div>
+        <div class="text-sm font-extrabold leading-tight">Portal Orang Tua</div>
+        <div class="text-[10px] opacity-60">SMA Islam Al Maarif</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full text-xs font-bold">
+        <div class="w-6 h-6 rounded-md bg-amber-600 flex items-center justify-center text-[10px]">{{ request.user.username|slice:":2"|upper }}</div>
+        {{ request.user.orangtua.nama|default:request.user.username }}
+      </div>
+      <form method="post" action="{% url 'accounts:ortu_logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="text-xs font-bold text-white/60 hover:text-white">Keluar</button>
+      </form>
+    </div>
+  </div>
+
+  {% if anak_list %}
+  <div class="bg-white border-b border-gray-200 px-7 py-3 flex items-center gap-3 overflow-x-auto">
+    <span class="text-xs font-bold text-gray-400 flex-shrink-0">Anak:</span>
+    {% for a in anak_list %}
+      <a href="{{ request.path }}?anak={{ a.id }}"
+         class="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold {% if anak.id == a.id %}border-emerald-700 bg-emerald-50 text-emerald-800{% else %}border-gray-200 text-gray-500{% endif %}">
+        {{ a.nama }} <span class="opacity-60 font-normal">· {{ a.kelas.nama_kelas }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="bg-white border-b border-gray-200 px-7 flex gap-1">
+    <a href="{% url 'ortu:beranda' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'beranda' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🏠 Beranda</a>
+    <a href="{% url 'ortu:riwayat' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'riwayat' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🗓️ Riwayat</a>
+    <a href="{% url 'ortu:izin' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'izin' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">📝 Ajukan Izin</a>
+    <a href="{% url 'ortu:notifikasi' %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'notifikasi' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🔔 Notifikasi</a>
+  </div>
+
+  <div class="max-w-2xl mx-auto p-6">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mb-5 px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 flex items-center justify-between">
+          <span>{{ message }}</span>
+          <button type="button" onclick="this.parentElement.remove()" class="text-emerald-700/50 hover:text-emerald-700 ml-4">✕</button>
+        </div>
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+  </div>
+
+</body>
+</html>

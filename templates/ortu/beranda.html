@@ -1,0 +1,47 @@
+{% extends "ortu/base_ortu.html" %}
+
+{% block content %}
+  <div class="bg-white rounded-2xl p-6 shadow-sm mb-5">
+    <div class="flex items-center gap-4">
+      {% if absensi_hari_ini and absensi_hari_ini.jam_masuk %}
+        <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">✓</div>
+        <div>
+          <div class="text-xs font-bold text-gray-400">STATUS HARI INI — {{ anak.nama|upper }}</div>
+          <div class="text-base font-extrabold">Sudah Hadir di Sekolah</div>
+          <div class="text-xs text-gray-400 mt-0.5">Masuk pukul {{ absensi_hari_ini.jam_masuk|time:"H:i" }}</div>
+        </div>
+      {% else %}
+        <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">⏱</div>
+        <div>
+          <div class="text-xs font-bold text-gray-400">STATUS HARI INI — {{ anak.nama|upper }}</div>
+          <div class="text-base font-extrabold">Belum Absen Masuk</div>
+        </div>
+      {% endif %}
+    </div>
+    <div class="grid grid-cols-2 gap-3 mt-5">
+      <div class="bg-stone-50 rounded-xl p-4 text-center">
+        <div class="text-xl font-extrabold text-emerald-600">{{ hadir }}</div>
+        <div class="text-xs text-gray-500 font-bold">Hadir Bulan Ini</div>
+      </div>
+      <div class="bg-stone-50 rounded-xl p-4 text-center">
+        <div class="text-xl font-extrabold text-amber-600">{{ izin }}</div>
+        <div class="text-xs text-gray-500 font-bold">Izin/Sakit</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="text-sm font-extrabold mb-3">Aktivitas Terbaru</h3>
+  <div class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+    {% for act in aktivitas %}
+    <div class="flex items-center gap-3 p-4">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 {% if act.warna == 'danger' %}bg-red-50 text-red-600{% else %}bg-emerald-50 text-emerald-600{% endif %}">{{ act.icon }}</div>
+      <div class="flex-1">
+        <div class="text-sm font-extrabold">{{ act.judul }}</div>
+        <div class="text-[11px] text-gray-400">{{ act.tanggal|date:"d M Y" }}{% if act.sub %} · {{ act.sub }}{% endif %}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="p-8 text-center text-gray-400 text-sm">Belum ada aktivitas.</div>
+    {% endfor %}
+  </div>
+{% endblock %}

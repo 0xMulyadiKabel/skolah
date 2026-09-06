@@ -1,0 +1,70 @@
+{% extends "ortu/base_ortu.html" %}
+
+{% block content %}
+  <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 text-xs text-gray-600 mb-5 flex gap-2">
+    <span>ℹ️</span>
+    <span>Pengajuan izin untuk <b>{{ anak.nama }}</b> akan langsung diteruskan ke wali kelasnya untuk disetujui.</span>
+  </div>
+
+  <div class="flex gap-2 mb-5 bg-stone-100 p-1 rounded-xl w-fit">
+    <button id="tab-ajukan-btn" onclick="showTab('ajukan')" class="px-5 py-2 rounded-lg text-xs font-extrabold bg-white text-emerald-800 shadow-sm">Ajukan Baru</button>
+    <button id="tab-status-btn" onclick="showTab('status')" class="px-5 py-2 rounded-lg text-xs font-extrabold text-gray-500">Riwayat Pengajuan</button>
+  </div>
+
+  <div id="tab-ajukan">
+    <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-100 p-5">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-gray-500 mb-2">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% if form.non_field_errors %}<p class="text-xs text-red-600 mb-3">{{ form.non_field_errors.0 }}</p>{% endif %}
+      <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Kirim Pengajuan</button>
+    </form>
+  </div>
+
+  <div id="tab-status" class="hidden">
+    <div class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+      {% for izin in riwayat_izin %}
+      <div class="flex items-center gap-3 p-4">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0
+          {% if izin.status == 'disetujui' %}bg-emerald-50 text-emerald-600{% elif izin.status == 'ditolak' %}bg-red-50 text-red-600{% else %}bg-amber-50 text-amber-600{% endif %}">
+          {% if izin.status == 'disetujui' %}✓{% elif izin.status == 'ditolak' %}✕{% else %}⏳{% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-extrabold">{{ izin.get_jenis_display }} · {{ izin.tanggal_mulai|date:"d M Y" }}</div>
+          <div class="text-[11px] text-gray-400">
+            {% if izin.status == 'menunggu' %}Diajukan {{ izin.dibuat_pada|date:"d M, H:i" }}
+            {% elif izin.status == 'disetujui' %}Disetujui{% if izin.ditinjau_oleh %} oleh {{ izin.ditinjau_oleh.nama }}{% endif %}
+            {% else %}Ditolak{% if izin.catatan_peninjau %} — {{ izin.catatan_peninjau }}{% endif %}{% endif %}
+          </div>
+        </div>
+        <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex-shrink-0
+          {% if izin.status == 'disetujui' %}bg-emerald-50 text-emerald-600{% elif izin.status == 'ditolak' %}bg-red-50 text-red-600{% else %}bg-amber-50 text-amber-600{% endif %}">
+          {{ izin.get_status_display }}
+        </span>
+      </div>
+      {% empty %}
+      <div class="p-8 text-center text-gray-400 text-sm">Belum ada pengajuan izin untuk {{ anak.nama }}.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="ortu-izin-flag" data-ada-pesan="{% if messages %}1{% else %}0{% endif %}" class="hidden"></div>
+  <script>
+    function showTab(tab) {
+      document.getElementById('tab-ajukan').classList.toggle('hidden', tab !== 'ajukan');
+      document.getElementById('tab-status').classList.toggle('hidden', tab !== 'status');
+      const activeCls = 'px-5 py-2 rounded-lg text-xs font-extrabold bg-white text-emerald-800 shadow-sm';
+      const inactiveCls = 'px-5 py-2 rounded-lg text-xs font-extrabold text-gray-500';
+      document.getElementById('tab-ajukan-btn').className = tab === 'ajukan' ? activeCls : inactiveCls;
+      document.getElementById('tab-status-btn').className = tab === 'status' ? activeCls : inactiveCls;
+    }
+    if (document.getElementById('ortu-izin-flag').dataset.adaPesan === '1') {
+      showTab('status');
+    }
+  </script>
+{% endblock %}

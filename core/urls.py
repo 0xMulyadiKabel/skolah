@@ -26,6 +26,7 @@ urlpatterns = [
     path('absensi/', include('absensi.urls')),
     path('siswa/', include('siswa.urls')),
     path('guru/', include('guru.urls')),
+    path('ortu/', include('ortu.urls')),
 ]
 
 from django.conf import settings

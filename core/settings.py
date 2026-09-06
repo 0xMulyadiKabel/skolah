@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'dashboard',
     'siswa',
     'guru',
+    'ortu',
 ]
 
 AUTH_USER_MODEL = 'accounts.User'

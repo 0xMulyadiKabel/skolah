@@ -1,0 +1,22 @@
+{% extends "ortu/base_ortu.html" %}
+
+{% block content %}
+  <h1 class="text-base font-extrabold mb-4">Notifikasi</h1>
+  <div class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+    {% for n in notif_list %}
+    <div class="flex gap-3 p-4">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0
+        {% if 'ditolak' in n.jenis or 'belum' in n.jenis or 'alpa' in n.jenis %}bg-red-50 text-red-600{% else %}bg-emerald-50 text-emerald-600{% endif %}">
+        {% if n.jenis == 'sholat_hadir' %}🕌{% elif n.jenis == 'belum_absen' or n.jenis == 'sholat_alpa' %}⚠️{% elif n.jenis == 'izin_ditolak' %}✕{% else %}✓{% endif %}
+      </div>
+      <div class="flex-1">
+        <div class="text-sm font-extrabold">{{ n.judul }}</div>
+        <div class="text-xs text-gray-500 mt-0.5">{{ n.deskripsi }}</div>
+        <div class="text-[11px] text-gray-400 mt-1 font-mono">{{ n.dibuat_pada|date:"d M, H:i" }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="p-8 text-center text-gray-400 text-sm">Belum ada notifikasi.</div>
+    {% endfor %}
+  </div>
+{% endblock %}
