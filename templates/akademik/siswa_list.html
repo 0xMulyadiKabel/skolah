@@ -60,7 +60,17 @@
               {% endif %}
             </td>
             <td class="py-3">
-              <a href="{% url 'akademik:siswa_update' s.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+              <div class="flex gap-2 items-center">
+                <a href="{% url 'akademik:siswa_update' s.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+                {% if s.user_id %}
+                  <span class="text-[11px] font-bold text-emerald-600">✓ Punya Akun</span>
+                {% else %}
+                  <form method="post" action="{% url 'akademik:siswa_buat_akun' s.pk %}" onsubmit="return confirm('Buat akun login untuk {{ s.nama }}? Username = NIS.');" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">Buat Akun</button>
+                  </form>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% empty %}

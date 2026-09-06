@@ -103,6 +103,32 @@ def siswa_bulk_nonaktifkan(request):
     return redirect("akademik:siswa_list")
 
 
+@admin_required
+def siswa_buat_akun(request, pk):
+    from django.utils.crypto import get_random_string
+
+    school = get_school(request)
+    siswa = get_object_or_404(Siswa, pk=pk, school=school)
+
+    if request.method == "POST":
+        if siswa.user_id:
+            messages.warning(request, f"{siswa.nama} sudah punya akun login.")
+        elif not siswa.nis:
+            messages.error(request, f"{siswa.nama} belum punya NIS. Isi NIS dulu sebelum buat akun (NIS dipakai sebagai username login).")
+        else:
+            temp_password = get_random_string(8)
+            user = User.objects.create_user(
+                username=siswa.nis, password=temp_password, role=User.Role.SISWA, school=school,
+            )
+            siswa.user = user
+            siswa.save()
+            messages.success(
+                request,
+                f"Akun {siswa.nama} dibuat — Username: {siswa.nis}, Password: {temp_password} (sampaikan ke siswa/orang tua).",
+            )
+    return redirect("akademik:siswa_list")
+
+
 # ================= KELAS =================
 
 @admin_required

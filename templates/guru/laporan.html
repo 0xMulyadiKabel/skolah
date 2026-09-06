@@ -1,0 +1,39 @@
+{% extends "guru/base_guru.html" %}
+
+{% block content %}
+  {% if kelas_list.count > 1 %}
+  <div class="flex gap-2 mb-4">
+    {% for k in kelas_list %}
+      <a href="?kelas={{ k.id }}" class="px-4 py-2 rounded-lg text-xs font-bold {% if k.id == kelas.id %}bg-emerald-800 text-white{% else %}bg-white text-gray-500 border border-gray-200{% endif %}">{{ k.nama_kelas }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <p class="text-sm font-bold text-gray-500 mb-5">{{ kelas.nama_kelas }} · Periode: {{ periode_label }}</p>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Siswa</th><th class="pb-3">Hadir</th><th class="pb-3">Izin/Sakit</th><th class="pb-3">Alpa</th><th class="pb-3">% Kehadiran</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ r.siswa.nama }}</td>
+          <td class="py-3 font-mono">{{ r.hadir }}</td>
+          <td class="py-3 font-mono">{{ r.izin }}</td>
+          <td class="py-3 font-mono">{{ r.alpa }}</td>
+          <td class="py-3">
+            {% if r.persen >= 90 %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">{{ r.persen }}%</span>
+            {% elif r.persen >= 75 %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">{{ r.persen }}%</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">{{ r.persen }}%</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

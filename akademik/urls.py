@@ -9,6 +9,7 @@ urlpatterns = [
     path("siswa/tambah/", views.siswa_create, name="siswa_create"),
     path("siswa/<int:pk>/edit/", views.siswa_update, name="siswa_update"),
     path("siswa/nonaktifkan-massal/", views.siswa_bulk_nonaktifkan, name="siswa_bulk_nonaktifkan"),
+    path("siswa/<int:pk>/buat-akun/", views.siswa_buat_akun, name="siswa_buat_akun"),
 
     path("kelas/", views.kelas_list, name="kelas_list"),
     path("kelas/tambah/", views.kelas_create, name="kelas_create"),

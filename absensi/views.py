@@ -4,15 +4,12 @@ from datetime import date
 from django.http import HttpResponse
 from django.shortcuts import render
 
-from accounts.models import School
+from accounts.utils import get_school
 from accounts.views import admin_required
 from akademik.models import Kelas, Siswa
 
 from .models import AbsensiHarian
-
-
-def _get_school(request):
-    return request.user.school or School.objects.first()
+from .utils import generate_daily_token
 
 
 def _hitung_rekap(school):
@@ -36,7 +33,7 @@ def _hitung_rekap(school):
 
 @admin_required
 def laporan_sekolah(request):
-    school = _get_school(request)
+    school = get_school(request)
     rows, awal_bulan = _hitung_rekap(school)
     context = {
         "page_title": "Laporan Kehadiran Sekolah",
@@ -48,7 +45,7 @@ def laporan_sekolah(request):
 
 @admin_required
 def laporan_export_csv(request):
-    school = _get_school(request)
+    school = get_school(request)
     rows, awal_bulan = _hitung_rekap(school)
 
     response = HttpResponse(content_type="text/csv")
@@ -58,3 +55,26 @@ def laporan_export_csv(request):
     for r in rows:
         writer.writerow([r["kelas"].nama_kelas, r["total_siswa"], r["hadir"], r["izin"], r["alpa"], f'{r["persen"]}%'])
     return response
+
+
+@admin_required
+def gerbang_qr(request):
+    school = get_school(request)
+    context = {"page_title": "Tampilan QR Gerbang", "school": school}
+    return render(request, "absensi/gerbang_qr.html", context)
+
+
+@admin_required
+def gerbang_qr_image(request):
+    import io
+
+    import qrcode
+
+    school = get_school(request)
+    token = generate_daily_token(school.id)
+    payload = f"ABSEN:{school.id}:{token}"
+
+    img = qrcode.make(payload)
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return HttpResponse(buf.getvalue(), content_type="image/png")

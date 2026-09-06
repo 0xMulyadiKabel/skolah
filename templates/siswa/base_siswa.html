@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} — Absensi Digital</title>
+  <link href="{% static 'css/output.css' %}" rel="stylesheet">
+  <script src="{% static 'js/htmx.min.js' %}"></script>
+</head>
+<body class="bg-stone-100 text-gray-900 min-h-screen flex flex-col max-w-md mx-auto">
+
+  <main class="flex-1 pb-24 overflow-y-auto">
+    {% if messages %}
+      <div class="p-4">
+        {% for message in messages %}
+          <div class="mb-3 px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-200 flex px-2 py-3 shadow-[0_-4px_20px_rgba(18,61,46,0.06)]">
+    <a href="{% url 'siswa:beranda' %}" class="flex-1 flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'beranda' %}text-emerald-800{% else %}text-gray-400{% endif %}">
+      <span class="text-lg">🏠</span><span class="text-[10px] font-extrabold">Beranda</span>
+    </a>
+    <a href="{% url 'siswa:absen' %}" class="flex-1 flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'absen' %}text-emerald-800{% else %}text-gray-400{% endif %}">
+      <span class="text-lg">📍</span><span class="text-[10px] font-extrabold">Absen</span>
+    </a>
+    <a href="{% url 'siswa:riwayat' %}" class="flex-1 flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'riwayat' %}text-emerald-800{% else %}text-gray-400{% endif %}">
+      <span class="text-lg">🗓️</span><span class="text-[10px] font-extrabold">Riwayat</span>
+    </a>
+    <a href="{% url 'siswa:izin' %}" class="flex-1 flex flex-col items-center gap-1 {% if request.resolver_match.url_name == 'izin' %}text-emerald-800{% else %}text-gray-400{% endif %}">
+      <span class="text-lg">📝</span><span class="text-[10px] font-extrabold">Izin</span>
+    </a>
+  </nav>
+
+</body>
+</html>

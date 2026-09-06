@@ -32,6 +32,37 @@ def _get_school(request):
     return request.user.school or School.objects.first()
 
 
+def siswa_required(view_func):
+    """Sama seperti admin_required, tapi khusus role='siswa'. Redirect ke
+    halaman login siswa (bukan login admin) kalau belum login/role salah."""
+    decorated = login_required(
+        user_passes_test(lambda u: u.role == "siswa", login_url=reverse_lazy("accounts:siswa_login"))(view_func)
+    )
+    return decorated
+
+
+class SiswaLoginView(auth_views.LoginView):
+    template_name = "registration/login_siswa.html"
+
+    def get_success_url(self):
+        return reverse_lazy("siswa:beranda")
+
+
+def guru_required(view_func):
+    """Sama seperti admin_required/siswa_required, khusus role='guru'."""
+    decorated = login_required(
+        user_passes_test(lambda u: u.role == "guru", login_url=reverse_lazy("accounts:guru_login"))(view_func)
+    )
+    return decorated
+
+
+class GuruLoginView(auth_views.LoginView):
+    template_name = "registration/login_guru.html"
+
+    def get_success_url(self):
+        return reverse_lazy("guru:dashboard")
+
+
 @admin_required
 def pengaturan(request):
     # Import di sini (bukan di atas) buat hindari circular import,

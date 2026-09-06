@@ -1,0 +1,36 @@
+{% extends "siswa/base_siswa.html" %}
+
+{% block content %}
+  <div class="p-5">
+    <a href="{% url 'siswa:absen' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali</a>
+    <h1 class="text-lg font-extrabold mb-4">Ajukan Halangan</h1>
+
+    <div class="bg-amber-50 rounded-2xl p-4 text-xs text-amber-800 mb-5 flex gap-2">
+      <span>🔒</span>
+      <span>Informasi ini bersifat pribadi. Guru hanya akan melihat status "Halangan" tanpa keterangan detail, dan kamu tetap tercatat hadir sekolah seperti biasa — ini hanya membebaskanmu dari absen sholat berjamaah.</span>
+    </div>
+
+    {% if halangan_aktif %}
+      <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+        <div class="text-2xl mb-2">🌸</div>
+        <div class="text-sm font-extrabold">Halangan Aktif</div>
+        <div class="text-xs text-gray-400 mt-1">{{ halangan_aktif.tanggal_mulai|date:"d M Y" }} s/d {{ halangan_aktif.tanggal_selesai|date:"d M Y" }}</div>
+      </div>
+    {% else %}
+      <form method="post" class="bg-white rounded-2xl border border-gray-100 p-5">
+        {% csrf_token %}
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 mb-2">Berlaku Mulai Tanggal</label>
+          <input type="date" name="tanggal_mulai" value="{{ today|date:'Y-m-d' }}" required
+                 class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-700 focus:outline-none text-sm">
+        </div>
+        <div class="mb-5">
+          <label class="block text-xs font-bold text-gray-500 mb-2">Sampai Tanggal (perkiraan)</label>
+          <input type="date" name="tanggal_selesai" required
+                 class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-emerald-700 focus:outline-none text-sm">
+        </div>
+        <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Simpan</button>
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

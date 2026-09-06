@@ -1,0 +1,15 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <div class="flex flex-col items-center justify-center py-10">
+    <h2 class="text-xl font-extrabold mb-1">QR Absen Hari Ini</h2>
+    <p class="text-sm text-gray-500 mb-6">{{ school.nama }} — {% now "j F Y" %}</p>
+    <div class="bg-white p-6 rounded-3xl border-4 border-emerald-800">
+      <img src="{% url 'absensi:gerbang_qr_image' %}" alt="QR Absen" class="w-72 h-72">
+    </div>
+    <p class="text-xs text-gray-400 mt-6 max-w-sm text-center">
+      Tampilkan halaman ini di layar/tablet gerbang sekolah. QR ini otomatis
+      berganti sendiri setiap hari jam 00:00, tidak perlu diganti manual.
+    </p>
+  </div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "guru/base_guru.html" %}
+
+{% block content %}
+  {% if kelas_list.count > 1 %}
+  <div class="flex gap-2 mb-4">
+    {% for k in kelas_list %}
+      <a href="?kelas={{ k.id }}" class="px-4 py-2 rounded-lg text-xs font-bold {% if k.id == kelas.id %}bg-emerald-800 text-white{% else %}bg-white text-gray-500 border border-gray-200{% endif %}">{{ k.nama_kelas }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="bg-gradient-to-br from-emerald-800 to-emerald-600 text-white rounded-2xl p-6 mb-6 flex items-center justify-between">
+    <div>
+      <div class="text-xs opacity-80 font-bold uppercase">Wali Kelas</div>
+      <div class="text-xl font-extrabold mt-1">{{ kelas.nama_kelas }}</div>
+      <div class="text-sm opacity-85 mt-1">{{ total_siswa }} siswa terdaftar</div>
+    </div>
+    <div class="text-4xl">🎓</div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">✓</div>
+      <div class="text-2xl font-extrabold font-mono">{{ hadir }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Hadir Hari Ini</div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">📝</div>
+      <div class="text-2xl font-extrabold font-mono">{{ izin }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Izin / Sakit</div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">⚠️</div>
+      <div class="text-2xl font-extrabold font-mono">{{ belum_absen }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Belum Absen</div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <h3 class="text-sm font-extrabold mb-4">Kehadiran Kelas Hari Ini</h3>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Metode</th><th class="pb-3">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in absensi_hari_ini %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ a.siswa.nama }}</td>
+          <td class="py-3 font-mono">{{ a.jam_masuk|time:"H:i:s" }}</td>
+          <td class="py-3">{{ a.get_metode_masuk_display }}</td>
+          <td class="py-3">
+            {% if a.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada siswa yang absen hari ini.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
