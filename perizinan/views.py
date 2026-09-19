@@ -89,6 +89,7 @@ def izin_guru_setujui(request, pk):
     if request.method == "POST":
         izin_obj.status = PengajuanIzinGuru.Status.DISETUJUI
         izin_obj.ditinjau_oleh = request.user
+        izin_obj.last_modified_by = request.user
         izin_obj.save()
         messages.success(request, f"Pengajuan izin {izin_obj.guru.nama} disetujui.")
     return redirect("perizinan:izin_guru_list")
@@ -100,6 +101,7 @@ def izin_guru_tolak(request, pk):
     if request.method == "POST":
         izin_obj.status = PengajuanIzinGuru.Status.DITOLAK
         izin_obj.ditinjau_oleh = request.user
+        izin_obj.last_modified_by = request.user
         izin_obj.save()
         messages.success(request, f"Pengajuan izin {izin_obj.guru.nama} ditolak.")
     return redirect("perizinan:izin_guru_list")

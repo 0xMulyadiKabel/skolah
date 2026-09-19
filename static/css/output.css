@@ -229,8 +229,14 @@
   .fixed {
     position: fixed;
   }
+  .relative {
+    position: relative;
+  }
   .static {
     position: static;
+  }
+  .inset-0 {
+    inset: 0px;
   }
   .right-0 {
     right: 0px;
@@ -240,6 +246,12 @@
   }
   .left-0 {
     left: 0px;
+  }
+  .z-20 {
+    z-index: 20;
+  }
+  .z-30 {
+    z-index: 30;
   }
   .mx-auto {
     margin-inline: auto;
@@ -358,8 +370,14 @@
   .h-72 {
     height: calc(var(--spacing) * 72);
   }
+  .h-\[60px\] {
+    height: 60px;
+  }
   .h-\[68px\] {
     height: 68px;
+  }
+  .h-full {
+    height: 100%;
   }
   .min-h-screen {
     min-height: 100vh;
@@ -539,6 +557,9 @@
   .overflow-x-auto {
     overflow-x: auto;
   }
+  .overflow-x-hidden {
+    overflow-x: hidden;
+  }
   .overflow-y-auto {
     overflow-y: auto;
   }
@@ -623,6 +644,12 @@
   }
   .bg-black {
     background-color: var(--color-black);
+  }
+  .bg-black\/40 {
+    background-color: color-mix(in srgb, #000 40%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-black) 40%, transparent);
+    }
   }
   .bg-emerald-50 {
     background-color: var(--color-emerald-50);
@@ -829,6 +856,10 @@
   .text-\[11px\] {
     font-size: 11px;
   }
+  .leading-none {
+    --tw-leading: 1;
+    line-height: 1;
+  }
   .leading-tight {
     --tw-leading: var(--leading-tight);
     line-height: var(--leading-tight);
@@ -844,6 +875,9 @@
   .font-normal {
     --tw-font-weight: var(--font-weight-normal);
     font-weight: var(--font-weight-normal);
+  }
+  .whitespace-nowrap {
+    white-space: nowrap;
   }
   .text-amber-600 {
     color: var(--color-amber-600);
@@ -868,6 +902,9 @@
   }
   .text-emerald-800 {
     color: var(--color-emerald-800);
+  }
+  .text-gray-300 {
+    color: var(--color-gray-300);
   }
   .text-gray-400 {
     color: var(--color-gray-400);
@@ -965,6 +1002,9 @@
     border-width: 0px;
   }
   @media (hover: hover) {
+    .hover\:border-emerald-700:hover {
+      border-color: var(--color-emerald-700);
+    }
     .hover\:bg-emerald-100:hover {
       background-color: var(--color-emerald-100);
     }
@@ -1014,6 +1054,39 @@
   @media (hover: hover) {
     .disabled\:hover\:bg-red-50:disabled:hover {
       background-color: var(--color-red-50);
+    }
+  }
+  @media (width >= 48rem) {
+    .md\:static {
+      position: static;
+    }
+    .md\:flex {
+      display: flex;
+    }
+    .md\:hidden {
+      display: none;
+    }
+    .md\:h-\[68px\] {
+      height: 68px;
+    }
+    .md\:h-auto {
+      height: auto;
+    }
+    .md\:p-6 {
+      padding: calc(var(--spacing) * 6);
+    }
+    .md\:p-7 {
+      padding: calc(var(--spacing) * 7);
+    }
+    .md\:px-4 {
+      padding-inline: calc(var(--spacing) * 4);
+    }
+    .md\:px-7 {
+      padding-inline: calc(var(--spacing) * 7);
+    }
+    .md\:text-lg {
+      font-size: var(--text-lg);
+      line-height: var(--tw-leading, var(--text-lg--line-height));
     }
   }
 }

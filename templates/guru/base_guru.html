@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/guru/base_guru.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="id">
@@ -8,15 +9,19 @@
   <link href="{% static 'css/output.css' %}" rel="stylesheet">
 </head>
 <body class="bg-stone-100 text-gray-900">
-  <div class="flex min-h-screen">
-    <aside class="w-60 shrink-0 bg-emerald-950 text-white flex flex-col p-4">
-      <div class="flex items-center gap-3 px-2 pb-6">
+  <div class="flex min-h-screen relative">
+
+    <!-- Overlay gelap, cuma muncul di mobile pas sidebar dibuka -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/40 z-20 md:hidden"></div>
+
+    <aside id="sidebar" class="hidden md:flex fixed md:static z-30 w-64 h-full md:h-auto shrink-0 bg-emerald-950 text-white flex-col p-4">
+      <a href="{% url 'guru:beranda_pribadi' %}" class="flex items-center gap-3 px-2 pb-6">
         <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">🕌</div>
         <div>
           <div class="text-sm font-extrabold leading-tight">Portal Guru</div>
-          <div class="text-[10px] opacity-60">SMA Islam Al Maarif</div>
+          <div class="text-[10px] opacity-60">← Kembali ke Beranda</div>
         </div>
-      </div>
+      </a>
 
       <nav class="flex flex-col gap-1 flex-1">
         <a href="{% url 'guru:dashboard' %}" class="px-3 py-2.5 rounded-lg text-sm font-bold {% if request.resolver_match.url_name == 'dashboard' %}bg-amber-600{% else %}text-white/75 hover:bg-white/5{% endif %}">📊 Kelas Saya</a>
@@ -38,10 +43,11 @@
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-[68px] bg-white border-b border-gray-200 flex items-center justify-between px-7 shrink-0">
-        <h2 class="text-lg font-extrabold">{{ page_title }}</h2>
+      <header class="h-[60px] md:h-[68px] bg-white border-b border-gray-200 flex items-center gap-3 px-4 md:px-7 shrink-0">
+        <button onclick="toggleSidebar()" class="md:hidden text-2xl leading-none">☰</button>
+        <h2 class="text-base md:text-lg font-extrabold">{{ page_title }}</h2>
       </header>
-      <main class="p-7 flex-1 overflow-y-auto">
+      <main class="p-4 md:p-7 flex-1 overflow-y-auto overflow-x-hidden">
         {% if messages %}
           {% for message in messages %}
             <div class="mb-5 px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 flex items-center justify-between">
@@ -54,5 +60,12 @@
       </main>
     </div>
   </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('hidden');
+      document.getElementById('sidebar-overlay').classList.toggle('hidden');
+    }
+  </script>
 </body>
 </html>

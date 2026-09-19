@@ -1,0 +1,42 @@
+{# Simpan sebagai: templates/guru/riwayat_pribadi.html #}
+{% extends "guru/base_guru_mobile.html" %}
+
+{% block content %}
+  <div class="p-5">
+    <h1 class="text-lg font-extrabold mb-4">Riwayat Kehadiran</h1>
+
+    <div class="flex gap-2 overflow-x-auto mb-4 pb-1">
+      <a href="?" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-extrabold {% if not status_filter %}bg-emerald-800 text-white{% else %}bg-white text-gray-500{% endif %}">Semua</a>
+      <a href="?status=hadir" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-extrabold {% if status_filter == 'hadir' %}bg-emerald-800 text-white{% else %}bg-white text-gray-500{% endif %}">Hadir</a>
+      <a href="?status=terlambat" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-extrabold {% if status_filter == 'terlambat' %}bg-emerald-800 text-white{% else %}bg-white text-gray-500{% endif %}">Terlambat</a>
+      <a href="?status=izin" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-extrabold {% if status_filter == 'izin' %}bg-emerald-800 text-white{% else %}bg-white text-gray-500{% endif %}">Izin/Sakit</a>
+      <a href="?status=alpa" class="flex-shrink-0 px-4 py-2 rounded-full text-xs font-extrabold {% if status_filter == 'alpa' %}bg-emerald-800 text-white{% else %}bg-white text-gray-500{% endif %}">Alpa</a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-100">
+      {% for r in riwayat_list %}
+      <div class="flex items-center gap-3 p-4">
+        <div class="w-11 text-center flex-shrink-0">
+          <div class="text-base font-extrabold font-mono">{{ r.tanggal|date:"d" }}</div>
+          <div class="text-[10px] text-gray-400 font-bold uppercase">{{ r.tanggal|date:"M" }}</div>
+        </div>
+        <div class="flex-1">
+          <div class="text-sm font-extrabold">
+            {% if r.status == 'hadir' %}Hadir Tepat Waktu{% elif r.status == 'terlambat' %}Terlambat{% elif r.status == 'izin' %}Izin/Sakit{% else %}Tanpa Keterangan{% endif %}
+          </div>
+          <div class="text-[11px] text-gray-400">
+            {% if r.jam_masuk %}Masuk {{ r.jam_masuk|time:"H:i" }}{% if r.jam_pulang %} · Pulang {{ r.jam_pulang|time:"H:i" }}{% endif %}{% else %}Tidak ada absen tercatat{% endif %}
+            {% if r.dikoreksi_oleh %} · <span class="text-gray-400">dikoreksi manual</span>{% endif %}
+          </div>
+        </div>
+        {% if r.status == 'hadir' %}<span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Hadir</span>
+        {% elif r.status == 'terlambat' %}<span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Telat</span>
+        {% elif r.status == 'izin' %}<span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Izin</span>
+        {% else %}<span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Alpa</span>{% endif %}
+      </div>
+      {% empty %}
+      <div class="p-8 text-center text-gray-400 text-sm">Belum ada riwayat kehadiran.</div>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

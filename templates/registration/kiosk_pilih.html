@@ -1,0 +1,34 @@
+{# Simpan sebagai: templates/registration/kiosk_pilih.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pilih Mode Kiosk</title>
+  <link href="{% static 'css/output.css' %}" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-stone-100 p-6">
+  <div class="w-full max-w-sm text-center">
+    <h1 class="text-lg font-extrabold mb-1">Perangkat ini dipasang di mana?</h1>
+    <p class="text-sm text-gray-500 mb-6">Pilih sekali saat setup awal device ini.</p>
+
+    <a href="{% url 'absensi:kiosk_gerbang' %}" class="block bg-white border border-gray-200 rounded-2xl p-6 mb-4 hover:border-emerald-700">
+      <div class="text-3xl mb-2">🏫</div>
+      <div class="font-extrabold">Kiosk Gerbang</div>
+      <div class="text-xs text-gray-400 mt-1">Absen masuk/pulang — siswa & guru</div>
+    </a>
+
+    <a href="{% url 'absensi:kiosk_sholat' %}" class="block bg-white border border-gray-200 rounded-2xl p-6 mb-6 hover:border-emerald-700">
+      <div class="text-3xl mb-2">🕌</div>
+      <div class="font-extrabold">Kiosk Sholat</div>
+      <div class="text-xs text-gray-400 mt-1">Absen sholat berjamaah — siswa saja</div>
+    </a>
+
+    <form method="post" action="{% url 'accounts:kiosk_logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="text-xs font-bold text-gray-400">Keluar dari Kiosk</button>
+    </form>
+  </div>
+</body>
+</html>

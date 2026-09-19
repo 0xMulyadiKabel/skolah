@@ -7,11 +7,12 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from absensi.forms import KoreksiAbsensiForm
-from absensi.models import AbsensiHarian
+from absensi.models import AbsensiGuru, AbsensiHarian
 from absensi.utils import catat_koreksi_absensi
 from accounts.views import guru_required
 from akademik.models import Siswa
-from perizinan.models import PengajuanIzin
+from perizinan.forms import PengajuanIzinGuruForm
+from perizinan.models import PengajuanIzin, PengajuanIzinGuru
 
 
 def _guru_profile(request):
@@ -31,6 +32,81 @@ def _kelas_terpilih(request, guru):
         if dipilih:
             return dipilih, kelas_list
     return kelas_list.first(), kelas_list
+
+
+@guru_required
+def beranda_pribadi(request):
+    guru = _guru_profile(request)
+    today = timezone.localdate()
+
+    absensi_hari_ini = AbsensiGuru.objects.filter(guru=guru, tanggal=today).first()
+    bulan_ini = AbsensiGuru.objects.filter(guru=guru, tanggal__year=today.year, tanggal__month=today.month)
+    hadir = bulan_ini.filter(status__in=[AbsensiGuru.Status.HADIR, AbsensiGuru.Status.TERLAMBAT]).count()
+    izin = bulan_ini.filter(status=AbsensiGuru.Status.IZIN).count()
+    alpa = bulan_ini.filter(status=AbsensiGuru.Status.ALPA).count()
+
+    context = {
+        "page_title": "Beranda", "guru": guru, "absensi_hari_ini": absensi_hari_ini,
+        "hadir": hadir, "izin": izin, "alpa": alpa,
+    }
+    return render(request, "guru/beranda_pribadi.html", context)
+
+
+@guru_required
+def riwayat_pribadi(request):
+    guru = _guru_profile(request)
+    status_filter = request.GET.get("status", "")
+
+    riwayat_qs = AbsensiGuru.objects.filter(guru=guru).order_by("-tanggal")
+    if status_filter:
+        riwayat_qs = riwayat_qs.filter(status=status_filter)
+
+    context = {"page_title": "Riwayat Kehadiran", "riwayat_list": riwayat_qs[:60], "status_filter": status_filter}
+    return render(request, "guru/riwayat_pribadi.html", context)
+
+
+@guru_required
+def izin_pribadi(request):
+    guru = _guru_profile(request)
+
+    if request.method == "POST":
+        form = PengajuanIzinGuruForm(request.POST, request.FILES)
+        if form.is_valid():
+            pengajuan = form.save(commit=False)
+            pengajuan.guru = guru
+            pengajuan.last_modified_by = request.user
+            pengajuan.save()
+            messages.success(request, "Pengajuan izin berhasil dikirim, menunggu persetujuan Admin.")
+            return redirect("guru:izin_pribadi")
+    else:
+        form = PengajuanIzinGuruForm()
+
+    riwayat_izin = PengajuanIzinGuru.objects.filter(guru=guru).order_by("-dibuat_pada")
+    context = {"page_title": "Ajukan Izin", "form": form, "riwayat_izin": riwayat_izin}
+    return render(request, "guru/izin_pribadi.html", context)
+
+
+@guru_required
+def izin_pribadi_edit(request, pk):
+    guru = _guru_profile(request)
+    pengajuan = get_object_or_404(PengajuanIzinGuru, pk=pk, guru=guru)
+
+    if request.method == "POST":
+        form = PengajuanIzinGuruForm(request.POST, request.FILES, instance=pengajuan)
+        if form.is_valid():
+            pengajuan = form.save(commit=False)
+            pengajuan.status = PengajuanIzinGuru.Status.MENUNGGU
+            pengajuan.ditinjau_oleh = None
+            pengajuan.catatan_peninjau = ""
+            pengajuan.last_modified_by = request.user
+            pengajuan.save()
+            messages.success(request, "Pengajuan izin berhasil diperbarui, menunggu persetujuan ulang Admin.")
+            return redirect("guru:izin_pribadi")
+    else:
+        form = PengajuanIzinGuruForm(instance=pengajuan)
+
+    context = {"page_title": "Edit Pengajuan Izin", "form": form, "pengajuan": pengajuan}
+    return render(request, "guru/izin_pribadi_edit.html", context)
 
 
 @guru_required
