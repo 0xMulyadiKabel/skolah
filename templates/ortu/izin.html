@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/ortu/izin.html #}
 {% extends "ortu/base_ortu.html" %}
 
 {% block content %}
@@ -46,6 +47,9 @@
           {% if izin.status == 'disetujui' %}bg-emerald-50 text-emerald-600{% elif izin.status == 'ditolak' %}bg-red-50 text-red-600{% else %}bg-amber-50 text-amber-600{% endif %}">
           {{ izin.get_status_display }}
         </span>
+        {% if izin.diajukan_oleh == 'orang_tua' %}
+        <a href="{% url 'ortu:izin_edit' izin.pk %}" class="text-[11px] font-bold text-emerald-800 flex-shrink-0 ml-1">Edit</a>
+        {% endif %}
       </div>
       {% empty %}
       <div class="p-8 text-center text-gray-400 text-sm">Belum ada pengajuan izin untuk {{ anak.nama }}.</div>

@@ -1,0 +1,14 @@
+{# Simpan sebagai: templates/akademik/guru_kartu.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:akun_guru_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Akun Guru</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-8 max-w-sm text-center">
+    <img src="{% url 'akademik:guru_kartu_qr_image' guru.pk %}" alt="QR Kartu" class="w-56 h-56 mx-auto mb-4">
+    <div class="text-lg font-extrabold">{{ guru.nama }}</div>
+    <div class="text-sm text-gray-500 font-mono">{{ guru.user.username }}</div>
+    <button onclick="window.print()" class="mt-6 px-5 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold">🖨️ Cetak</button>
+  </div>
+  <p class="text-xs text-gray-400 mt-4 max-w-sm">QR ini yang ditempel/dicetak di kartu guru. Isinya username akun login guru. Dipakai buat absen lewat Kiosk di gerbang (masuk/pulang saja, tidak untuk sholat).</p>
+{% endblock %}

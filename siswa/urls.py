@@ -1,3 +1,5 @@
+# Simpan sebagai: siswa/urls.py
+
 from django.urls import path
 
 from . import views
@@ -13,4 +15,5 @@ urlpatterns = [
     path("halangan/", views.halangan, name="halangan"),
     path("riwayat/", views.riwayat, name="riwayat"),
     path("izin/", views.izin, name="izin"),
+    path("izin/<int:pk>/edit/", views.izin_edit, name="izin_edit"),
 ]

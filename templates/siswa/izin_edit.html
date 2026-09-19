@@ -1,0 +1,25 @@
+{# Simpan sebagai: templates/siswa/izin_edit.html #}
+{% extends "siswa/base_siswa.html" %}
+
+{% block content %}
+  <div class="p-5">
+    <a href="{% url 'siswa:izin' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali</a>
+    <h1 class="text-lg font-extrabold mb-2">Edit Pengajuan Izin</h1>
+    <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 mb-4">
+      ⚠️ Mengubah pengajuan ini akan mengembalikan statusnya jadi <b>Menunggu</b> — wali kelas perlu meninjau ulang.
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="bg-white rounded-2xl border border-gray-100 p-5">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-gray-500 mb-2">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% if form.non_field_errors %}<p class="text-xs text-red-600 mb-3">{{ form.non_field_errors.0 }}</p>{% endif %}
+      <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Simpan Perubahan</button>
+    </form>
+  </div>
+{% endblock %}

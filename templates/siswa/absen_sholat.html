@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/siswa/absen_sholat.html (timpa yang lama) #}
 {% extends "siswa/base_siswa.html" %}
 
 {% block content %}
@@ -5,68 +6,87 @@
     <a href="{% url 'siswa:absen' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali</a>
     <h1 class="text-lg font-extrabold mb-4">Absen {{ sesi.get_nama_sholat_display }}</h1>
 
-    <div id="pra-scan" class="bg-white rounded-2xl border border-gray-100 p-6 text-center">
-      <div class="text-3xl mb-3">🕌</div>
-      <p class="text-sm text-gray-500 mb-4">Pindai QR yang sama (gerbang/musholla) untuk absen sholat {{ sesi.get_nama_sholat_display }}.</p>
-      <button id="btn-mulai" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Mulai Scan</button>
+    <div id="pra-selfie" class="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+      <div class="text-3xl mb-3">🤳</div>
+      <p class="text-sm text-gray-500 mb-4">Ambil foto selfie untuk absen sholat {{ sesi.get_nama_sholat_display }}. Lokasi kamu juga akan diverifikasi.</p>
+      <button id="btn-mulai" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Buka Kamera</button>
     </div>
 
-    <div id="scan-area" class="hidden bg-white rounded-2xl border border-gray-100 p-4">
-      <div id="qr-reader" class="rounded-xl overflow-hidden"></div>
-      <p id="status-text" class="text-xs text-gray-400 text-center mt-3">Mengarahkan kamera ke QR...</p>
+    <div id="kamera-area" class="hidden bg-white rounded-2xl border border-gray-100 p-4">
+      <video id="camera-preview" autoplay playsinline class="w-full rounded-xl bg-black" style="transform: scaleX(-1);"></video>
+      <canvas id="capture-canvas" class="hidden"></canvas>
+      <button id="btn-ambil-foto" class="w-full mt-4 py-3 rounded-xl bg-emerald-800 text-white font-bold">📸 Ambil Foto</button>
+      <p id="status-text" class="text-xs text-gray-400 text-center mt-3">Posisikan wajahmu di tengah frame.</p>
     </div>
 
     <div id="hasil" class="hidden mt-4 p-4 rounded-2xl text-sm font-bold"></div>
     <button id="btn-ulang" class="hidden w-full mt-4 py-3 rounded-xl border border-gray-200 text-sm font-bold">Coba Lagi</button>
   </div>
 
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script>
     const btnMulai = document.getElementById('btn-mulai');
+    const btnAmbilFoto = document.getElementById('btn-ambil-foto');
     const btnUlang = document.getElementById('btn-ulang');
-    const praScan = document.getElementById('pra-scan');
-    const scanArea = document.getElementById('scan-area');
+    const praSelfie = document.getElementById('pra-selfie');
+    const kameraArea = document.getElementById('kamera-area');
     const statusText = document.getElementById('status-text');
     const hasilBox = document.getElementById('hasil');
-    let html5QrCode;
+    const video = document.getElementById('camera-preview');
+    const canvas = document.getElementById('capture-canvas');
+    let cameraStream;
 
-    btnMulai.addEventListener('click', mulaiScan);
+    btnMulai.addEventListener('click', mulaiKamera);
     btnUlang.addEventListener('click', () => {
       hasilBox.classList.add('hidden');
       btnUlang.classList.add('hidden');
-      mulaiScan();
+      mulaiKamera();
     });
 
-    function mulaiScan() {
-      praScan.classList.add('hidden');
-      scanArea.classList.remove('hidden');
-      statusText.textContent = "Mengarahkan kamera ke QR...";
-
-      html5QrCode = new Html5Qrcode("qr-reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 220 },
-        (decodedText) => {
-          html5QrCode.stop().then(() => {
-            statusText.textContent = "QR terbaca, mengirim...";
-            kirimAbsenSholat(decodedText);
-          });
-        },
-        () => {}
-      ).catch((err) => {
-        scanArea.classList.add('hidden');
+    async function mulaiKamera() {
+      praSelfie.classList.add('hidden');
+      kameraArea.classList.remove('hidden');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = cameraStream;
+      } catch (err) {
+        kameraArea.classList.add('hidden');
         tampilkanHasil(false, "Gagal akses kamera: " + err + ". Pastikan izin kamera diaktifkan di browser.");
-      });
+      }
     }
 
-    function kirimAbsenSholat(qrText) {
-      const bagian = qrText.split(":");
-      const token = bagian.length >= 3 ? bagian[2] : qrText;
+    btnAmbilFoto.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
 
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      kameraArea.classList.add('hidden');
+      statusText.textContent = "Foto diambil, mengambil lokasi...";
+
+      const fotoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      ambilLokasiDanKirim(fotoDataUrl);
+    });
+
+    function ambilLokasiDanKirim(fotoDataUrl) {
+      if (!navigator.geolocation) {
+        tampilkanHasil(false, "Perangkat tidak mendukung deteksi lokasi.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => kirimAbsenSholat(fotoDataUrl, pos.coords.latitude, pos.coords.longitude),
+        (err) => tampilkanHasil(false, "Gagal mengambil lokasi: " + err.message + ". Aktifkan GPS dan izinkan akses lokasi."),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function kirimAbsenSholat(foto, lat, lng) {
       fetch("{% url 'siswa:absen_sholat_submit' sesi.id %}", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
-        body: JSON.stringify({ qr_token: token }),
+        body: JSON.stringify({ foto: foto, latitude: lat, longitude: lng }),
       })
         .then((res) => res.json())
         .then((data) => tampilkanHasil(data.ok, data.pesan))
@@ -74,7 +94,6 @@
     }
 
     function tampilkanHasil(ok, pesan) {
-      scanArea.classList.add('hidden');
       hasilBox.classList.remove('hidden');
       btnUlang.classList.remove('hidden');
       hasilBox.className = "mt-4 p-4 rounded-2xl text-sm font-bold " + (ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700");

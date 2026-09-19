@@ -4,9 +4,8 @@ from django.db import models
 
 class School(models.Model):
     class MetodeVerifikasi(models.TextChoices):
-        QR_DAN_LOKASI = "qr_lokasi", "QR Code + Lokasi GPS"
+        SELFIE_DAN_LOKASI = "selfie_lokasi", "Selfie + Lokasi GPS"
         LOKASI_SAJA = "lokasi", "Lokasi GPS Saja"
-        QR_SAJA = "qr", "QR Code Saja"
 
     nama = models.CharField(max_length=150)
     alamat = models.TextField(blank=True)
@@ -18,7 +17,7 @@ class School(models.Model):
     toleransi_keterlambatan_menit = models.PositiveSmallIntegerField(default=15)
     radius_geofence_meter = models.PositiveSmallIntegerField(default=100)
     metode_verifikasi = models.CharField(
-        max_length=15, choices=MetodeVerifikasi.choices, default=MetodeVerifikasi.QR_DAN_LOKASI
+        max_length=15, choices=MetodeVerifikasi.choices, default=MetodeVerifikasi.SELFIE_DAN_LOKASI
     )
 
     # Hari aktif sekolah -- disimpan sebagai 7 boolean terpisah (bukan satu

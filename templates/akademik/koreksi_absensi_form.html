@@ -1,0 +1,41 @@
+{# Simpan sebagai: templates/akademik/koreksi_absensi_form.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:koreksi_kelas_list' siswa.kelas_id %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-7 max-w-lg">
+    <div class="mb-5">
+      <div class="text-xs font-bold text-gray-400">SISWA</div>
+      <div class="text-base font-extrabold">{{ siswa.nama }}</div>
+      <div class="text-xs text-gray-400">Tanggal dikoreksi: {{ tanggal|date:"d F Y" }}</div>
+    </div>
+
+    {% if absensi_ada.foto_masuk %}
+    <div class="mb-5">
+      <div class="text-xs font-bold text-gray-400 mb-2">FOTO SELFIE SAAT ABSEN MASUK</div>
+      <a href="{{ absensi_ada.foto_masuk.url }}" target="_blank">
+        <img src="{{ absensi_ada.foto_masuk.url }}" class="w-32 h-32 object-cover rounded-xl border border-gray-200">
+      </a>
+    </div>
+    {% endif %}
+
+    {% if absensi_ada.dikoreksi_oleh %}
+    <div class="bg-amber-50 rounded-xl p-3 text-xs text-amber-800 mb-5">
+      ⚠️ Data ini sebelumnya sudah pernah dikoreksi manual oleh <b>{{ absensi_ada.dikoreksi_oleh.username }}</b> pada {{ absensi_ada.dikoreksi_pada|date:"d M Y, H:i" }}. Alasan sebelumnya: "{{ absensi_ada.catatan_koreksi }}"
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 mb-2">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold hover:bg-emerald-900 transition">Simpan Koreksi</button>
+    </form>
+  </div>
+{% endblock %}

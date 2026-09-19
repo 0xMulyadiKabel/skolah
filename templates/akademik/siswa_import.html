@@ -1,0 +1,60 @@
+{# Simpan sebagai: templates/akademik/siswa_import.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:siswa_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Data Siswa</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6 max-w-2xl mb-5">
+    <h3 class="text-sm font-extrabold mb-3">Cara Migrasi Data</h3>
+    <ol class="text-sm text-gray-600 list-decimal pl-5 space-y-1.5 mb-5">
+      <li>Unduh template terlebih dahulu — jangan ubah nama kolom di baris pertama.</li>
+      <li>Isi data siswa di bawah baris contoh, lalu <b>hapus baris contoh (berwarna)</b> sebelum upload.</li>
+      <li>Pastikan nama Kelas persis sama dengan yang sudah ada di sistem (cek dulu di halaman <a href="{% url 'akademik:kelas_list' %}" class="text-emerald-800 underline">Kelas</a>) — kalau belum ada, buat kelasnya dulu.</li>
+      <li>Upload file, sistem akan memproses dan menampilkan hasil per baris di bawah form ini.</li>
+    </ol>
+    <a href="{% url 'akademik:siswa_import_template' %}" class="inline-block px-4 py-2.5 rounded-lg bg-stone-100 text-sm font-bold hover:bg-stone-200">⬇ Unduh Template Excel</a>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6 max-w-2xl mb-5">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-gray-500 mb-2">{{ form.file_excel.label }}</label>
+        {{ form.file_excel }}
+        {% if form.file_excel.errors %}<p class="text-xs text-red-600 mt-1">{{ form.file_excel.errors.0 }}</p>{% endif %}
+      </div>
+      <button type="submit" class="px-5 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">Upload & Proses</button>
+    </form>
+  </div>
+
+  {% if hasil %}
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <div class="flex gap-4 mb-5">
+      <div class="bg-stone-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold">{{ hasil.total }}</div><div class="text-xs text-gray-500 font-bold">Total Baris</div></div>
+      <div class="bg-emerald-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-emerald-600">{{ hasil.berhasil }}</div><div class="text-xs text-gray-500 font-bold">Berhasil</div></div>
+      <div class="bg-red-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-red-600">{{ hasil.gagal }}</div><div class="text-xs text-gray-500 font-bold">Gagal</div></div>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Baris Excel</th><th class="pb-3">Nama</th><th class="pb-3">NIS</th><th class="pb-3">Status</th><th class="pb-3">Keterangan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in hasil.baris %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-2.5 font-mono">{{ b.baris }}</td>
+          <td class="py-2.5 font-bold">{{ b.nama }}</td>
+          <td class="py-2.5 font-mono">{{ b.nis|default:"—" }}</td>
+          <td class="py-2.5">
+            {% if b.status == 'berhasil' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Berhasil</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Gagal</span>{% endif %}
+          </td>
+          <td class="py-2.5 text-xs text-gray-500">{{ b.pesan }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+{% endblock %}

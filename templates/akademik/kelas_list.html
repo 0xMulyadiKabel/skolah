@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/akademik/kelas_list.html #}
 {% extends "base_admin.html" %}
 
 {% block content %}
@@ -29,6 +30,7 @@
           <td class="py-3 font-mono">{{ k.siswa_list.count }}</td>
           <td class="py-3">
             <a href="{% url 'akademik:kelas_update' k.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+            <a href="{% url 'akademik:koreksi_kelas_list' k.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Koreksi Absensi</a>
           </td>
         </tr>
         {% empty %}

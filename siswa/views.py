@@ -1,21 +1,38 @@
+# Simpan sebagai: siswa/views.py
+
+import base64
 import json
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
+from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from absensi.models import AbsensiHarian, AbsensiSholat, HalanganSholat, SesiSholat
-from absensi.utils import generate_daily_token, get_jadwal_sholat, haversine_distance
+from absensi.utils import get_jadwal_sholat, haversine_distance, is_hari_sekolah
 from accounts.views import siswa_required
 from perizinan.forms import PengajuanIzinForm
 from perizinan.models import PengajuanIzin
+from perizinan.utils import cek_izin_overlap_aktif, terapkan_edit_pengajuan_izin
 
 
 def _siswa_profile(request):
     return request.user.siswa
+
+
+def _decode_foto_selfie(foto_data_url, siswa, tanggal):
+    """
+    Foto dikirim dari browser sebagai data URL base64 (hasil canvas.toDataURL()),
+    formatnya 'data:image/jpeg;base64,xxxxx...'. Fungsi ini pecah jadi file
+    yang bisa disimpan ke ImageField.
+    """
+    header, imgstr = foto_data_url.split(";base64,")
+    ext = header.split("/")[-1]  # contoh: "jpeg"
+    nama_file = f"{siswa.nis or siswa.id}_{tanggal.isoformat()}.{ext}"
+    return ContentFile(base64.b64decode(imgstr), name=nama_file)
 
 
 @siswa_required
@@ -95,20 +112,26 @@ def absen_submit(request):
     except json.JSONDecodeError:
         return JsonResponse({"ok": False, "pesan": "Data tidak valid."}, status=400)
 
-    qr_token = data.get("qr_token", "")
+    foto_data_url = data.get("foto", "")
     lat = data.get("latitude")
     lng = data.get("longitude")
 
-    if school.metode_verifikasi in ["qr_lokasi", "qr"]:
-        expected_token = generate_daily_token(school.id)
-        if qr_token != expected_token:
-            return JsonResponse({
-                "ok": False,
-                "pesan": "QR tidak valid atau sudah kedaluwarsa. Pastikan kamu scan QR di gerbang sekolah hari ini.",
-            })
+    today = timezone.localdate()
+    if not is_hari_sekolah(school, today):
+        return JsonResponse({"ok": False, "pesan": "Hari ini bukan hari sekolah aktif (libur/akhir pekan), absen tidak dapat dicatat."})
+
+    if school.metode_verifikasi == "selfie_lokasi":
+        if not foto_data_url:
+            return JsonResponse({"ok": False, "pesan": "Foto selfie belum diambil. Coba lagi."})
+        try:
+            foto_file = _decode_foto_selfie(foto_data_url, siswa, today)
+        except (ValueError, IndexError):
+            return JsonResponse({"ok": False, "pesan": "Format foto tidak valid, coba ulangi."})
+    else:
+        foto_file = None
 
     lokasi_valid = True
-    if school.metode_verifikasi in ["qr_lokasi", "lokasi"]:
+    if school.metode_verifikasi in ["selfie_lokasi", "lokasi"]:
         if lat is None or lng is None:
             return JsonResponse({"ok": False, "pesan": "Lokasi tidak terdeteksi. Aktifkan GPS dan izinkan akses lokasi di browser."})
         jarak = haversine_distance(float(lat), float(lng), float(school.latitude), float(school.longitude))
@@ -119,23 +142,26 @@ def absen_submit(request):
                 "pesan": f"Kamu berada sekitar {int(jarak)}m dari sekolah, di luar radius yang diizinkan ({school.radius_geofence_meter}m).",
             })
 
-    today = timezone.localdate()
     now = timezone.localtime().time()
     absensi, _ = AbsensiHarian.objects.get_or_create(siswa=siswa, tanggal=today)
 
     if not absensi.jam_masuk:
         absensi.jam_masuk = now
-        absensi.metode_masuk = AbsensiHarian.Metode.QR_LOKASI
+        absensi.metode_masuk = AbsensiHarian.Metode.SELFIE_LOKASI
         absensi.lokasi_valid_masuk = lokasi_valid
         batas_telat_dt = datetime.combine(today, school.jam_masuk) + timedelta(minutes=school.toleransi_keterlambatan_menit)
         absensi.status = AbsensiHarian.Status.HADIR if now <= batas_telat_dt.time() else AbsensiHarian.Status.TERLAMBAT
+        if foto_file:
+            absensi.foto_masuk = foto_file
         absensi.save()
         return JsonResponse({"ok": True, "pesan": f"Absen masuk berhasil dicatat pukul {now.strftime('%H:%M')}."})
 
     elif not absensi.jam_pulang:
         absensi.jam_pulang = now
-        absensi.metode_pulang = AbsensiHarian.Metode.QR_LOKASI
+        absensi.metode_pulang = AbsensiHarian.Metode.SELFIE_LOKASI
         absensi.lokasi_valid_pulang = lokasi_valid
+        if foto_file:
+            absensi.foto_pulang = foto_file
         absensi.save()
         return JsonResponse({"ok": True, "pesan": f"Absen pulang berhasil dicatat pukul {now.strftime('%H:%M')}."})
 
@@ -160,16 +186,35 @@ def absen_sholat_submit(request, sesi_id):
         return JsonResponse({"ok": False, "pesan": "Metode tidak diizinkan."}, status=405)
 
     siswa = _siswa_profile(request)
-    sesi = get_object_or_404(SesiSholat, pk=sesi_id, school=siswa.school, aktif=True)
+    school = siswa.school
+    sesi = get_object_or_404(SesiSholat, pk=sesi_id, school=school, aktif=True)
 
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({"ok": False, "pesan": "Data tidak valid."}, status=400)
 
-    expected_token = generate_daily_token(siswa.school.id)
-    if data.get("qr_token", "") != expected_token:
-        return JsonResponse({"ok": False, "pesan": "QR tidak valid atau sudah kedaluwarsa."})
+    foto_data_url = data.get("foto", "")
+    lat = data.get("latitude")
+    lng = data.get("longitude")
+    today = timezone.localdate()
+
+    if not foto_data_url:
+        return JsonResponse({"ok": False, "pesan": "Foto selfie belum diambil. Coba lagi."})
+    try:
+        foto_file = _decode_foto_selfie(foto_data_url, siswa, today)
+    except (ValueError, IndexError):
+        return JsonResponse({"ok": False, "pesan": "Format foto tidak valid, coba ulangi."})
+
+    if lat is None or lng is None:
+        return JsonResponse({"ok": False, "pesan": "Lokasi tidak terdeteksi. Aktifkan GPS dan izinkan akses lokasi di browser."})
+    jarak = haversine_distance(float(lat), float(lng), float(school.latitude), float(school.longitude))
+    lokasi_valid = jarak <= school.radius_geofence_meter
+    if not lokasi_valid:
+        return JsonResponse({
+            "ok": False,
+            "pesan": f"Kamu berada sekitar {int(jarak)}m dari sekolah, di luar radius yang diizinkan ({school.radius_geofence_meter}m).",
+        })
 
     now_time = timezone.localtime().time()
     if sesi.jendela_mulai and sesi.jendela_selesai:
@@ -180,9 +225,9 @@ def absen_sholat_submit(request, sesi_id):
                          f"({sesi.jendela_mulai.strftime('%H:%M')}\u2013{sesi.jendela_selesai.strftime('%H:%M')}).",
             })
 
-    today = timezone.localdate()
     absensi_sholat, created = AbsensiSholat.objects.get_or_create(
-        siswa=siswa, sesi_sholat=sesi, tanggal=today, defaults={"waktu_absen": now_time, "hadir": True},
+        siswa=siswa, sesi_sholat=sesi, tanggal=today,
+        defaults={"waktu_absen": now_time, "hadir": True, "foto": foto_file, "lokasi_valid": lokasi_valid},
     )
     if not created:
         return JsonResponse({"ok": False, "pesan": f"Kamu sudah tercatat hadir sholat {sesi.get_nama_sholat_display()} hari ini."})
@@ -226,13 +271,17 @@ def izin(request):
     if request.method == "POST":
         form = PengajuanIzinForm(request.POST, request.FILES)
         if form.is_valid():
-            pengajuan = form.save(commit=False)
-            pengajuan.siswa = siswa
-            pengajuan.diajukan_oleh = PengajuanIzin.DiajukanOleh.SISWA
-            pengajuan.diajukan_oleh_user = request.user
-            pengajuan.save()
-            messages.success(request, "Pengajuan izin berhasil dikirim, menunggu persetujuan wali kelas.")
-            return redirect("siswa:izin")
+            if cek_izin_overlap_aktif(siswa, form.cleaned_data["tanggal_mulai"], form.cleaned_data["tanggal_selesai"]):
+                messages.error(request, "Anda sudah memiliki pengajuan izin untuk tanggal ini.")
+            else:
+                pengajuan = form.save(commit=False)
+                pengajuan.siswa = siswa
+                pengajuan.diajukan_oleh = PengajuanIzin.DiajukanOleh.SISWA
+                pengajuan.diajukan_oleh_user = request.user
+                pengajuan.last_modified_by = request.user
+                pengajuan.save()
+                messages.success(request, "Pengajuan izin berhasil dikirim, menunggu persetujuan wali kelas.")
+                return redirect("siswa:izin")
     else:
         form = PengajuanIzinForm()
 
@@ -240,3 +289,33 @@ def izin(request):
 
     context = {"page_title": "Pengajuan Izin", "form": form, "riwayat_izin": riwayat_izin}
     return render(request, "siswa/izin.html", context)
+
+
+@siswa_required
+def izin_edit(request, pk):
+    siswa = _siswa_profile(request)
+    # Hanya boleh edit pengajuan yang DIA SENDIRI ajukan -- kalau yang
+    # ajukan dulu itu Orang Tua, siswa tidak bisa edit dari sini (sesuai
+    # aturan "jangan bisa diedit bebas tanpa kontrol" di catatan perbaikan).
+    pengajuan = get_object_or_404(
+        PengajuanIzin, pk=pk, siswa=siswa, diajukan_oleh=PengajuanIzin.DiajukanOleh.SISWA,
+    )
+
+    if request.method == "POST":
+        form = PengajuanIzinForm(request.POST, request.FILES, instance=pengajuan)
+        if form.is_valid():
+            if cek_izin_overlap_aktif(
+                siswa, form.cleaned_data["tanggal_mulai"], form.cleaned_data["tanggal_selesai"], exclude_pk=pengajuan.pk,
+            ):
+                messages.error(request, "Ada pengajuan izin lain yang tanggalnya tumpang tindih dengan perubahan ini.")
+            else:
+                pengajuan = form.save(commit=False)
+                pengajuan = terapkan_edit_pengajuan_izin(pengajuan, request.user)
+                pengajuan.save()
+                messages.success(request, "Pengajuan izin berhasil diperbarui, menunggu persetujuan ulang wali kelas.")
+                return redirect("siswa:izin")
+    else:
+        form = PengajuanIzinForm(instance=pengajuan)
+
+    context = {"page_title": "Edit Pengajuan Izin", "form": form, "pengajuan": pengajuan}
+    return render(request, "siswa/izin_edit.html", context)

@@ -1,0 +1,80 @@
+{# Simpan sebagai: templates/absensi/kiosk_gerbang.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <div class="flex flex-col items-center py-4">
+    <h2 class="text-xl font-extrabold mb-1">🏫 Kiosk Absen Gerbang</h2>
+    <p class="text-sm text-gray-500 mb-6">Tempelkan kartu siswa/guru (QR) ke depan kamera</p>
+
+    <div id="qr-reader" class="w-full max-w-md rounded-2xl overflow-hidden border-4 border-emerald-800"></div>
+
+    <div id="hasil-box" class="hidden mt-6 w-full max-w-md p-8 rounded-2xl text-center">
+      <div id="hasil-icon" class="text-5xl mb-3"></div>
+      <div id="hasil-nama" class="text-2xl font-extrabold"></div>
+      <div id="hasil-pesan" class="text-sm mt-1"></div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-6">Halaman ini didesain buat dibuka terus-menerus di device gerbang. Cukup login sekali, biarkan tetap terbuka.</p>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    const hasilBox = document.getElementById('hasil-box');
+    const hasilIcon = document.getElementById('hasil-icon');
+    const hasilNama = document.getElementById('hasil-nama');
+    const hasilPesan = document.getElementById('hasil-pesan');
+    let processing = false;
+
+    const html5QrCode = new Html5Qrcode("qr-reader");
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        if (processing) return;
+        processing = true;
+        kirimScan(decodedText.trim());
+      },
+      () => { /* dipanggil terus tiap frame gagal decode -- normal, diabaikan */ }
+    ).catch((err) => {
+      document.getElementById('qr-reader').innerHTML =
+        '<div class="p-6 text-center text-sm text-red-600">Gagal akses kamera: ' + err + '</div>';
+    });
+
+    function kirimScan(nis) {
+      fetch("{% url 'absensi:kiosk_gerbang_submit' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+        body: JSON.stringify({ nis: nis }),
+      })
+        .then((res) => res.json())
+        .then((data) => tampilkanHasil(data))
+        .catch(() => tampilkanHasil({ ok: false, pesan: "Kesalahan jaringan, coba lagi." }))
+        .finally(() => {
+          setTimeout(() => { hasilBox.classList.add('hidden'); processing = false; }, 2500);
+        });
+    }
+
+    function tampilkanHasil(data) {
+      hasilBox.classList.remove('hidden');
+      hasilBox.className = "mt-6 w-full max-w-md p-8 rounded-2xl text-center " + (data.ok ? "bg-emerald-50" : "bg-red-50");
+      hasilIcon.textContent = data.ok ? "✅" : "⚠️";
+      hasilNama.textContent = data.nama || "Kartu Tidak Dikenali";
+      hasilPesan.textContent = data.pesan;
+      hasilPesan.className = "text-sm mt-1 " + (data.ok ? "text-emerald-700" : "text-red-700");
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie) {
+        for (let cookie of document.cookie.split(";")) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+{% endblock %}

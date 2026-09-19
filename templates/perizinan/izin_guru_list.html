@@ -1,0 +1,53 @@
+{# Simpan sebagai: templates/perizinan/izin_guru_list.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <div class="flex gap-2 mb-5 bg-stone-100 p-1 rounded-xl w-fit">
+    <a href="{% url 'perizinan:izin_list' %}" class="px-5 py-2 rounded-lg text-xs font-extrabold text-gray-500">Tab Siswa</a>
+    <a href="{% url 'perizinan:izin_guru_list' %}" class="px-5 py-2 rounded-lg text-xs font-extrabold bg-white text-emerald-800 shadow-sm">Tab Guru</a>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <div class="flex gap-2 mb-5">
+      <a href="{% url 'perizinan:izin_guru_list' %}" class="px-4 py-2 rounded-lg text-xs font-bold {% if not status_selected %}bg-emerald-800 text-white{% else %}bg-stone-100 text-gray-500{% endif %}">Semua</a>
+      <a href="?status=menunggu" class="px-4 py-2 rounded-lg text-xs font-bold {% if status_selected == 'menunggu' %}bg-emerald-800 text-white{% else %}bg-stone-100 text-gray-500{% endif %}">Menunggu</a>
+      <a href="?status=disetujui" class="px-4 py-2 rounded-lg text-xs font-bold {% if status_selected == 'disetujui' %}bg-emerald-800 text-white{% else %}bg-stone-100 text-gray-500{% endif %}">Disetujui</a>
+      <a href="?status=ditolak" class="px-4 py-2 rounded-lg text-xs font-bold {% if status_selected == 'ditolak' %}bg-emerald-800 text-white{% else %}bg-stone-100 text-gray-500{% endif %}">Ditolak</a>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Guru</th><th class="pb-3">Jenis</th><th class="pb-3">Tanggal</th><th class="pb-3">Keterangan</th><th class="pb-3">Status</th><th class="pb-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for izin in izin_list %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ izin.guru.nama }}</td>
+          <td class="py-3">{{ izin.get_jenis_display }}</td>
+          <td class="py-3 font-mono text-xs">{{ izin.tanggal_mulai }} s/d {{ izin.tanggal_selesai }}</td>
+          <td class="py-3 text-xs text-gray-500 max-w-xs truncate">{{ izin.keterangan|default:"—" }}</td>
+          <td class="py-3">
+            {% if izin.status == 'disetujui' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Disetujui</span>
+            {% elif izin.status == 'ditolak' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Ditolak</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Menunggu</span>{% endif %}
+          </td>
+          <td class="py-3">
+            {% if izin.status == 'menunggu' %}
+              <div class="flex gap-2">
+                <form method="post" action="{% url 'perizinan:izin_guru_setujui' izin.pk %}">{% csrf_token %}<button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">Setujui</button></form>
+                <form method="post" action="{% url 'perizinan:izin_guru_tolak' izin.pk %}">{% csrf_token %}<button type="submit" class="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100">Tolak</button></form>
+              </div>
+            {% else %}
+              <span class="text-xs text-gray-400">Sudah ditinjau</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="py-6 text-center text-gray-400">Tidak ada pengajuan izin guru.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

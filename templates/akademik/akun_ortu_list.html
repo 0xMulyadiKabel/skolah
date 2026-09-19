@@ -14,6 +14,7 @@
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
           <th class="pb-3">Nama Orang Tua</th>
+          <th class="pb-3">Username</th>
           <th class="pb-3">No. HP</th>
           <th class="pb-3">Anak Terhubung</th>
           <th class="pb-3">Status</th>
@@ -24,6 +25,7 @@
         {% for o in ortu_list %}
         <tr class="border-b border-gray-100 last:border-0 {% if not o.user.is_active %}opacity-50{% endif %}">
           <td class="py-3 font-bold">{{ o.nama }}</td>
+          <td class="py-3 font-mono">{{ o.user.username }}</td>
           <td class="py-3 font-mono">{{ o.no_hp }}</td>
           <td class="py-3">
             {% for s in o.anak.all %}{{ s.nama }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
@@ -52,7 +54,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada akun orang tua.</td></tr>
+        <tr><td colspan="6" class="py-6 text-center text-gray-400">Belum ada akun orang tua.</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -1,13 +1,17 @@
+# Simpan sebagai: ortu/views.py
+
 from datetime import date
 
 from django.contrib import messages
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from absensi.models import AbsensiHarian, AbsensiSholat
 from accounts.views import ortu_required
 from notifikasi.models import Notifikasi
 from perizinan.forms import PengajuanIzinForm
 from perizinan.models import PengajuanIzin
+from perizinan.utils import cek_izin_overlap_aktif, terapkan_edit_pengajuan_izin
 
 
 def _ortu_profile(request):
@@ -93,13 +97,17 @@ def izin(request):
     if request.method == "POST":
         form = PengajuanIzinForm(request.POST, request.FILES)
         if form.is_valid():
-            pengajuan = form.save(commit=False)
-            pengajuan.siswa = anak
-            pengajuan.diajukan_oleh = PengajuanIzin.DiajukanOleh.ORANG_TUA
-            pengajuan.diajukan_oleh_user = request.user
-            pengajuan.save()
-            messages.success(request, f"Pengajuan izin untuk {anak.nama} berhasil dikirim, menunggu persetujuan wali kelas.")
-            return redirect(f"{request.path}?anak={anak.id}")
+            if cek_izin_overlap_aktif(anak, form.cleaned_data["tanggal_mulai"], form.cleaned_data["tanggal_selesai"]):
+                messages.error(request, f"{anak.nama} sudah memiliki pengajuan izin untuk tanggal ini.")
+            else:
+                pengajuan = form.save(commit=False)
+                pengajuan.siswa = anak
+                pengajuan.diajukan_oleh = PengajuanIzin.DiajukanOleh.ORANG_TUA
+                pengajuan.diajukan_oleh_user = request.user
+                pengajuan.last_modified_by = request.user
+                pengajuan.save()
+                messages.success(request, f"Pengajuan izin untuk {anak.nama} berhasil dikirim, menunggu persetujuan wali kelas.")
+                return redirect(f"{request.path}?anak={anak.id}")
     else:
         form = PengajuanIzinForm()
 
@@ -110,6 +118,37 @@ def izin(request):
         "form": form, "riwayat_izin": riwayat_izin,
     }
     return render(request, "ortu/izin.html", context)
+
+
+@ortu_required
+def izin_edit(request, pk):
+    ortu = _ortu_profile(request)
+    # Hanya boleh edit pengajuan buat anaknya sendiri, DAN yang diajukan
+    # oleh Orang Tua (bukan yang diajukan siswa sendiri -- konsisten sama
+    # aturan kontrol akses yang sama di sisi Siswa).
+    pengajuan = get_object_or_404(
+        PengajuanIzin, pk=pk, siswa__in=ortu.anak.all(), diajukan_oleh=PengajuanIzin.DiajukanOleh.ORANG_TUA,
+    )
+    anak = pengajuan.siswa
+
+    if request.method == "POST":
+        form = PengajuanIzinForm(request.POST, request.FILES, instance=pengajuan)
+        if form.is_valid():
+            if cek_izin_overlap_aktif(
+                anak, form.cleaned_data["tanggal_mulai"], form.cleaned_data["tanggal_selesai"], exclude_pk=pengajuan.pk,
+            ):
+                messages.error(request, "Ada pengajuan izin lain yang tanggalnya tumpang tindih dengan perubahan ini.")
+            else:
+                pengajuan = form.save(commit=False)
+                pengajuan = terapkan_edit_pengajuan_izin(pengajuan, request.user)
+                pengajuan.save()
+                messages.success(request, "Pengajuan izin berhasil diperbarui, menunggu persetujuan ulang wali kelas.")
+                return redirect(f"{reverse('ortu:izin')}?anak={anak.id}")
+    else:
+        form = PengajuanIzinForm(instance=pengajuan)
+
+    context = {"page_title": "Edit Pengajuan Izin", "form": form, "pengajuan": pengajuan, "anak": anak}
+    return render(request, "ortu/izin_edit.html", context)
 
 
 @ortu_required

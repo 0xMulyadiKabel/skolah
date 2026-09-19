@@ -1,9 +1,18 @@
+{# Simpan sebagai: templates/accounts/pengaturan.html #}
 {% extends "base_admin.html" %}
 
 {% block content %}
-  <a href="{% url 'absensi:gerbang_qr' %}" class="inline-flex items-center gap-2 mb-5 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-bold hover:bg-emerald-100">
-    📱 Buka Tampilan QR Gerbang
-  </a>
+  <div class="flex gap-2 mb-5 flex-wrap">
+    <a href="{% url 'absensi:hari_libur_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-stone-100 text-gray-700 text-sm font-bold hover:bg-stone-200">
+      📅 Kelola Kalender Akademik / Hari Libur
+    </a>
+    <a href="{% url 'absensi:kiosk_gerbang' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-bold hover:bg-emerald-100">
+      🏫 Buka Kiosk Gerbang
+    </a>
+    <a href="{% url 'absensi:kiosk_sholat' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-bold hover:bg-emerald-100">
+      🕌 Buka Kiosk Sholat
+    </a>
+  </div>
   <form method="post">
     {% csrf_token %}
     <div class="grid grid-cols-2 gap-5">

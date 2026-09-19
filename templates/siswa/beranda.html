@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/siswa/beranda.html #}
 {% extends "siswa/base_siswa.html" %}
 
 {% block content %}
@@ -7,7 +8,10 @@
         <div class="text-xs opacity-75 font-bold">Assalamu'alaikum,</div>
         <div class="text-lg font-extrabold">{{ siswa.nama }}</div>
       </div>
-      <a href="{% url 'accounts:siswa_logout' %}" class="text-xs font-bold bg-white/10 px-3 py-2 rounded-lg">Keluar</a>
+      <form method="post" action="{% url 'accounts:siswa_logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="text-xs font-bold bg-white/10 px-3 py-2 rounded-lg">Keluar</button>
+      </form>
     </div>
     <div class="text-xs opacity-75 mt-2">{{ siswa.kelas.nama_kelas }}</div>
   </div>
