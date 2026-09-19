@@ -1,0 +1,38 @@
+{# Simpan sebagai: templates/akademik/koreksi_kelas_list.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:kelas_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Kelas</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <p class="text-sm text-gray-500 mb-5">{{ kelas.nama_kelas }} · Tanggal: {{ tanggal|date:"d F Y" }}</p>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Status</th><th class="pb-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in baris %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ b.siswa.nama }}</td>
+          <td class="py-3 font-mono">{{ b.absensi.jam_masuk|time:"H:i:s"|default:"—" }}</td>
+          <td class="py-3">
+            {% if not b.absensi %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Belum Absen</span>
+            {% elif b.absensi.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+            {% elif b.absensi.status == 'izin' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Izin/Sakit</span>
+            {% elif b.absensi.status == 'alpa' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Alpa</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>{% endif %}
+            {% if b.absensi.dikoreksi_oleh %}<span class="text-[10px] text-gray-400 ml-1" title="Dikoreksi manual">✎ dikoreksi</span>{% endif %}
+          </td>
+          <td class="py-3">
+            <a href="{% url 'akademik:koreksi_absensi' b.siswa.id %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Koreksi</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada siswa di kelas ini.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

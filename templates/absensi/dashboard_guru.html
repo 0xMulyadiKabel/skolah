@@ -1,0 +1,53 @@
+{# Simpan sebagai: templates/absensi/dashboard_guru.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <p class="text-sm text-gray-500 mb-5">Tanggal: {{ tanggal|date:"d F Y" }}</p>
+
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">✓</div>
+      <div class="text-2xl font-extrabold font-mono">{{ hadir }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Hadir Hari Ini</div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">📝</div>
+      <div class="text-2xl font-extrabold font-mono">{{ izin }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Izin / Sakit</div>
+    </div>
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">⚠️</div>
+      <div class="text-2xl font-extrabold font-mono">{{ belum_absen }}</div>
+      <div class="text-xs text-gray-500 font-bold mt-1">Belum Absen</div>
+    </div>
+  </div>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <h3 class="text-sm font-extrabold mb-4">Kehadiran Guru Hari Ini ({{ total_guru }} guru)</h3>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Guru</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Jam Pulang</th><th class="pb-3">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in baris %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-bold">{{ b.guru.nama }}</td>
+          <td class="py-3 font-mono">{{ b.absensi.jam_masuk|time:"H:i"|default:"—" }}</td>
+          <td class="py-3 font-mono">{{ b.absensi.jam_pulang|time:"H:i"|default:"—" }}</td>
+          <td class="py-3">
+            {% if not b.absensi %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Belum Absen</span>
+            {% elif b.absensi.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+            {% elif b.absensi.status == 'izin' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Izin/Sakit</span>
+            {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>{% endif %}
+            {% if b.absensi.dikoreksi_oleh %}<span class="text-[10px] text-gray-400 ml-1" title="Dikoreksi manual">✎</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada data guru.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

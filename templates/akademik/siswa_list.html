@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/akademik/siswa_list.html (timpa yang lama) #}
 {% extends "base_admin.html" %}
 
 {% block content %}
@@ -17,6 +18,7 @@
       </div>
       <div class="flex gap-2">
         <a href="{% url 'akademik:kelas_list' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">Kelola Kelas</a>
+        <a href="{% url 'akademik:siswa_import' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">⬆ Migrasi Data</a>
         <a href="{% url 'akademik:siswa_create' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">+ Tambah Siswa</a>
       </div>
     </form>
@@ -60,15 +62,31 @@
               {% endif %}
             </td>
             <td class="py-3">
-              <div class="flex gap-2 items-center">
+              <div class="flex gap-2 items-center flex-wrap">
                 <a href="{% url 'akademik:siswa_update' s.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+                <a href="{% url 'akademik:siswa_kartu' s.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Kartu QR</a>
                 {% if s.user_id %}
-                  <span class="text-[11px] font-bold text-emerald-600">✓ Punya Akun</span>
+                  {% if s.user.is_active %}
+                    <span class="text-[10px] font-bold text-emerald-600">● Akun Aktif</span>
+                  {% else %}
+                    <span class="text-[10px] font-bold text-gray-400">● Akun Nonaktif</span>
+                  {% endif %}
+                  <button type="submit" formaction="{% url 'akademik:siswa_reset_password' s.pk %}"
+                          onclick="return confirm('Reset kata sandi {{ s.nama }}?');"
+                          class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">
+                    Reset Sandi
+                  </button>
+                  <button type="submit" formaction="{% url 'akademik:siswa_akun_toggle' s.pk %}"
+                          onclick="return confirm('{% if s.user.is_active %}Nonaktifkan{% else %}Aktifkan{% endif %} akun login {{ s.nama }}?');"
+                          class="px-3 py-1.5 rounded-lg {% if s.user.is_active %}bg-stone-100{% else %}bg-emerald-50 text-emerald-700{% endif %} text-xs font-bold hover:bg-stone-200">
+                    {% if s.user.is_active %}Nonaktifkan Akun{% else %}Aktifkan Akun{% endif %}
+                  </button>
                 {% else %}
-                  <form method="post" action="{% url 'akademik:siswa_buat_akun' s.pk %}" onsubmit="return confirm('Buat akun login untuk {{ s.nama }}? Username = NIS.');" class="inline">
-                    {% csrf_token %}
-                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">Buat Akun</button>
-                  </form>
+                  <button type="submit" formaction="{% url 'akademik:siswa_buat_akun' s.pk %}"
+                          onclick="return confirm('Buat akun login untuk {{ s.nama }}? Username = NIS.');"
+                          class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100">
+                    Buat Akun
+                  </button>
                 {% endif %}
               </div>
             </td>

@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/guru/laporan.html #}
 {% extends "guru/base_guru.html" %}
 
 {% block content %}
@@ -10,7 +11,19 @@
   {% endif %}
 
   <div class="bg-white border border-gray-200 rounded-2xl p-6">
-    <p class="text-sm font-bold text-gray-500 mb-5">{{ kelas.nama_kelas }} · Periode: {{ periode_label }}</p>
+    <form method="get" class="flex items-end gap-3 mb-5 flex-wrap">
+      {% if kelas %}<input type="hidden" name="kelas" value="{{ kelas.id }}">{% endif %}
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5">Dari Tanggal</label>
+        <input type="date" name="awal" value="{{ awal|date:'Y-m-d' }}" class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5">Sampai Tanggal</label>
+        <input type="date" name="akhir" value="{{ akhir|date:'Y-m-d' }}" class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+      </div>
+      <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 text-white text-sm font-bold">Terapkan</button>
+    </form>
+    <p class="text-sm font-bold text-gray-500 mb-5">{{ kelas.nama_kelas }} · Periode: {{ awal|date:"d M Y" }} — {{ akhir|date:"d M Y" }}</p>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">

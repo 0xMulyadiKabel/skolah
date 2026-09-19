@@ -1,23 +1,10 @@
-import hashlib
-import hmac
+# Simpan sebagai: absensi/utils.py
+
 import math
 
 import requests
-from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
-
-
-def generate_daily_token(school_id):
-    """
-    Token QR hari ini untuk 1 sekolah. Dihitung dari school_id + tanggal +
-    SECRET_KEY Django -- otomatis beda tiap hari tanpa perlu disimpan ke
-    database atau di-generate ulang pakai cron job. Siapa pun yang tidak
-    tahu SECRET_KEY tidak bisa menebak token besok.
-    """
-    today_str = timezone.localdate().isoformat()
-    message = f"{school_id}:{today_str}"
-    return hmac.new(settings.SECRET_KEY.encode(), message.encode(), hashlib.sha256).hexdigest()[:16]
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -28,6 +15,51 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     d_lambda = math.radians(lon2 - lon1)
     a = math.sin(d_phi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(d_lambda / 2) ** 2
     return 2 * R * math.asin(math.sqrt(a))
+
+
+DAY_FIELD_MAP = {
+    0: "aktif_senin", 1: "aktif_selasa", 2: "aktif_rabu", 3: "aktif_kamis",
+    4: "aktif_jumat", 5: "aktif_sabtu", 6: "aktif_minggu",
+}
+
+
+def is_hari_sekolah(school, tanggal):
+    """
+    True kalau tanggal itu hari sekolah aktif -- artinya BUKAN hari yang
+    di-nonaktifkan Admin di Pengaturan (mis. Sabtu/Minggu), DAN bukan
+    tanggal yang terdaftar sebagai Hari Libur (mis. libur nasional yang
+    kebetulan jatuh di hari kerja).
+    """
+    from .models import HariLibur
+
+    field_name = DAY_FIELD_MAP[tanggal.weekday()]
+    if not getattr(school, field_name):
+        return False
+    return not HariLibur.objects.filter(school=school, tanggal=tanggal).exists()
+
+
+def catat_koreksi_absensi(siswa, tanggal, status, jam_masuk, jam_pulang, catatan, user):
+    """
+    Dipakai bareng oleh Guru dan Admin -- satu-satunya jalur resmi untuk
+    'menimpa' data kehadiran secara manual. Selalu isi dikoreksi_oleh &
+    dikoreksi_pada, supaya ada jejak akuntabilitas siapa yang override dan
+    kapan (relevan untuk kasus GPS gagal, siswa lupa absen, dsb).
+    """
+    from django.utils import timezone
+
+    from .models import AbsensiHarian
+
+    absensi, _ = AbsensiHarian.objects.get_or_create(siswa=siswa, tanggal=tanggal)
+    absensi.status = status
+    if jam_masuk:
+        absensi.jam_masuk = jam_masuk
+    if jam_pulang:
+        absensi.jam_pulang = jam_pulang
+    absensi.dikoreksi_oleh = user
+    absensi.dikoreksi_pada = timezone.now()
+    absensi.catatan_koreksi = catatan
+    absensi.save()
+    return absensi
 
 
 def get_jadwal_sholat(school):

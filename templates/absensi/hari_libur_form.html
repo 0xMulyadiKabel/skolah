@@ -1,0 +1,18 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'absensi:hari_libur_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Kalender Akademik</a>
+  <div class="bg-white border border-gray-200 rounded-2xl p-7 max-w-lg">
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 mb-2">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold hover:bg-emerald-900 transition">Simpan</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'accounts:pengaturan' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Pengaturan</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-6">
+    <div class="flex items-center justify-between mb-5">
+      <p class="text-sm text-gray-500">Tanggal yang terdaftar di sini tidak akan dihitung sebagai "Belum Absen" di Dashboard & Laporan, meski jatuh di hari yang biasanya aktif.</p>
+      <a href="{% url 'absensi:hari_libur_create' %}" class="flex-shrink-0 ml-4 px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">+ Tambah Hari Libur</a>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+          <th class="pb-3">Tanggal</th><th class="pb-3">Keterangan</th><th class="pb-3">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for libur in libur_list %}
+        <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3 font-mono font-bold">{{ libur.tanggal|date:"d F Y" }}</td>
+          <td class="py-3">{{ libur.keterangan }}</td>
+          <td class="py-3">
+            <form method="post" action="{% url 'absensi:hari_libur_delete' libur.pk %}" onsubmit="return confirm('Hapus hari libur {{ libur.tanggal }}?');" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100">Hapus</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="py-6 text-center text-gray-400">Belum ada hari libur yang didaftarkan.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

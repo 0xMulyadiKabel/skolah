@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/guru/dashboard.html #}
 {% extends "guru/base_guru.html" %}
 
 {% block content %}
@@ -41,22 +42,28 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
-          <th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Metode</th><th class="pb-3">Status</th>
+          <th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Status</th><th class="pb-3">Aksi</th>
         </tr>
       </thead>
       <tbody>
-        {% for a in absensi_hari_ini %}
+        {% for b in baris %}
         <tr class="border-b border-gray-100 last:border-0">
-          <td class="py-3 font-bold">{{ a.siswa.nama }}</td>
-          <td class="py-3 font-mono">{{ a.jam_masuk|time:"H:i:s" }}</td>
-          <td class="py-3">{{ a.get_metode_masuk_display }}</td>
+          <td class="py-3 font-bold">{{ b.siswa.nama }}</td>
+          <td class="py-3 font-mono">{{ b.absensi.jam_masuk|time:"H:i:s"|default:"—" }}</td>
           <td class="py-3">
-            {% if a.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+            {% if not b.absensi %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Belum Absen</span>
+            {% elif b.absensi.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+            {% elif b.absensi.status == 'izin' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Izin/Sakit</span>
+            {% elif b.absensi.status == 'alpa' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Alpa</span>
             {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>{% endif %}
+            {% if b.absensi.dikoreksi_oleh %}<span class="text-[10px] text-gray-400 ml-1" title="Dikoreksi manual">✎</span>{% endif %}
+          </td>
+          <td class="py-3">
+            <a href="{% url 'guru:koreksi_absensi' b.siswa.id %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Koreksi</a>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada siswa yang absen hari ini.</td></tr>
+        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada siswa di kelas ini.</td></tr>
         {% endfor %}
       </tbody>
     </table>

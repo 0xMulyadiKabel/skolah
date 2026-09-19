@@ -1,3 +1,5 @@
+# Simpan sebagai: perizinan/views.py
+
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -37,6 +39,7 @@ def izin_setujui(request, pk):
     izin = get_object_or_404(PengajuanIzin, pk=pk, siswa__school=_get_school(request))
     if request.method == "POST":
         izin.status = PengajuanIzin.Status.DISETUJUI
+        izin.last_modified_by = request.user
         izin.save()
         messages.success(request, f"Pengajuan izin {izin.siswa.nama} disetujui.")
     return redirect("perizinan:izin_list")
@@ -47,6 +50,7 @@ def izin_tolak(request, pk):
     izin = get_object_or_404(PengajuanIzin, pk=pk, siswa__school=_get_school(request))
     if request.method == "POST":
         izin.status = PengajuanIzin.Status.DITOLAK
+        izin.last_modified_by = request.user
         izin.save()
         messages.success(request, f"Pengajuan izin {izin.siswa.nama} ditolak.")
     return redirect("perizinan:izin_list")
@@ -59,3 +63,43 @@ def izin_detail(request, pk):
         pk=pk, siswa__school=_get_school(request),
     )
     return render(request, "perizinan/izin_detail.html", {"page_title": "Detail Pengajuan Izin", "izin": izin})
+
+
+# ================= APPROVAL IZIN GURU (ADMIN) =================
+
+from .models import PengajuanIzinGuru
+
+
+@admin_required
+def izin_guru_list(request):
+    school = _get_school(request)
+    status = request.GET.get("status", "")
+
+    izin_qs = PengajuanIzinGuru.objects.filter(guru__school=school).select_related("guru").order_by("-dibuat_pada")
+    if status:
+        izin_qs = izin_qs.filter(status=status)
+
+    context = {"page_title": "Approval Izin Guru", "izin_list": izin_qs, "status_selected": status}
+    return render(request, "perizinan/izin_guru_list.html", context)
+
+
+@admin_required
+def izin_guru_setujui(request, pk):
+    izin_obj = get_object_or_404(PengajuanIzinGuru, pk=pk, guru__school=_get_school(request))
+    if request.method == "POST":
+        izin_obj.status = PengajuanIzinGuru.Status.DISETUJUI
+        izin_obj.ditinjau_oleh = request.user
+        izin_obj.save()
+        messages.success(request, f"Pengajuan izin {izin_obj.guru.nama} disetujui.")
+    return redirect("perizinan:izin_guru_list")
+
+
+@admin_required
+def izin_guru_tolak(request, pk):
+    izin_obj = get_object_or_404(PengajuanIzinGuru, pk=pk, guru__school=_get_school(request))
+    if request.method == "POST":
+        izin_obj.status = PengajuanIzinGuru.Status.DITOLAK
+        izin_obj.ditinjau_oleh = request.user
+        izin_obj.save()
+        messages.success(request, f"Pengajuan izin {izin_obj.guru.nama} ditolak.")
+    return redirect("perizinan:izin_guru_list")

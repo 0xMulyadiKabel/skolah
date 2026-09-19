@@ -1,0 +1,15 @@
+{# Simpan sebagai: templates/akademik/siswa_kartu.html #}
+{% extends "base_admin.html" %}
+
+{% block content %}
+  <a href="{% url 'akademik:siswa_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Data Siswa</a>
+
+  <div class="bg-white border border-gray-200 rounded-2xl p-8 max-w-sm text-center">
+    <img src="{% url 'akademik:siswa_kartu_qr_image' siswa.pk %}" alt="QR Kartu" class="w-56 h-56 mx-auto mb-4">
+    <div class="text-lg font-extrabold">{{ siswa.nama }}</div>
+    <div class="text-sm text-gray-500 font-mono">NISN: {{ siswa.nis }}</div>
+    <div class="text-sm text-gray-500">{{ siswa.kelas.nama_kelas }}</div>
+    <button onclick="window.print()" class="mt-6 px-5 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold">🖨️ Cetak</button>
+  </div>
+  <p class="text-xs text-gray-400 mt-4 max-w-sm">QR ini yang perlu ditempel/dicetak di kartu fisik siswa. Isinya cuma NISN polos — tempelkan di kartu pelajar, siswa tinggal tunjukkan ke Kiosk di gerbang/musholla.</p>
+{% endblock %}

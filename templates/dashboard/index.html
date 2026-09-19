@@ -1,31 +1,103 @@
+{# Simpan sebagai: templates/dashboard/index.html (timpa yang lama) #}
 {% extends "base_admin.html" %}
 
 {% block content %}
 
-  <!-- STAT CARDS -->
-  <div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="bg-white border border-gray-200 rounded-2xl p-5">
-      <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center mb-3">🎓</div>
-      <div class="text-2xl font-extrabold font-mono">{{ total_siswa }}</div>
-      <div class="text-xs text-gray-500 font-bold mt-1">Total Siswa Aktif</div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-2xl p-5">
-      <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">✓</div>
-      <div class="text-2xl font-extrabold font-mono">{{ hadir }}</div>
-      <div class="text-xs text-gray-500 font-bold mt-1">Hadir Hari Ini</div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-2xl p-5">
-      <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">📝</div>
-      <div class="text-2xl font-extrabold font-mono">{{ izin }}</div>
-      <div class="text-xs text-gray-500 font-bold mt-1">Izin / Sakit</div>
-    </div>
-    <div class="bg-white border border-gray-200 rounded-2xl p-5">
-      <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">⚠️</div>
-      <div class="text-2xl font-extrabold font-mono">{{ belum_absen }}</div>
-      <div class="text-xs text-gray-500 font-bold mt-1">Belum Absen / Alpa</div>
-    </div>
+  <div class="flex gap-2 mb-5 bg-stone-100 p-1 rounded-xl w-fit">
+    <a href="?tab=siswa" class="px-5 py-2 rounded-lg text-xs font-extrabold {% if tab == 'siswa' %}bg-white text-emerald-800 shadow-sm{% else %}text-gray-500{% endif %}">Tab Siswa</a>
+    <a href="?tab=guru" class="px-5 py-2 rounded-lg text-xs font-extrabold {% if tab == 'guru' %}bg-white text-emerald-800 shadow-sm{% else %}text-gray-500{% endif %}">Tab Guru</a>
   </div>
 
-  {% include "dashboard/_live_checkin.html" %}
+  {% if not hari_sekolah %}
+  <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-center gap-3">
+    <span class="text-xl">📅</span>
+    <div>
+      <div class="text-sm font-extrabold text-amber-800">Hari ini bukan hari sekolah aktif</div>
+      <div class="text-xs text-amber-700">Angka "Belum Absen" di bawah tidak sepenuhnya berlaku hari ini — kemungkinan hari libur/akhir pekan.</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if tab == 'guru' %}
+    <!-- ===== TAB GURU ===== -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center mb-3">🧑‍🏫</div>
+        <div class="text-2xl font-extrabold font-mono">{{ total_guru }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Total Guru</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">✓</div>
+        <div class="text-2xl font-extrabold font-mono">{{ hadir_guru }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Hadir Hari Ini</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">📝</div>
+        <div class="text-2xl font-extrabold font-mono">{{ izin_guru }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Izin / Sakit</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">⚠️</div>
+        <div class="text-2xl font-extrabold font-mono">{{ belum_absen_guru }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Belum Absen</div>
+      </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-2xl p-6">
+      <h3 class="text-sm font-extrabold mb-4">Kehadiran Guru Hari Ini</h3>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
+            <th class="pb-3">Guru</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Jam Pulang</th><th class="pb-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in baris_guru %}
+          <tr class="border-b border-gray-100 last:border-0">
+            <td class="py-3 font-bold">{{ b.guru.nama }}</td>
+            <td class="py-3 font-mono">{{ b.absensi.jam_masuk|time:"H:i"|default:"—" }}</td>
+            <td class="py-3 font-mono">{{ b.absensi.jam_pulang|time:"H:i"|default:"—" }}</td>
+            <td class="py-3">
+              {% if not b.absensi %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-red-50 text-red-600">Belum Absen</span>
+              {% elif b.absensi.status == 'terlambat' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Terlambat</span>
+              {% elif b.absensi.status == 'izin' %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-amber-50 text-amber-600">Izin/Sakit</span>
+              {% else %}<span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600">Tepat Waktu</span>{% endif %}
+              {% if b.absensi.dikoreksi_oleh %}<span class="text-[10px] text-gray-400 ml-1" title="Dikoreksi manual">✎</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada data guru.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    <!-- ===== TAB SISWA ===== -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center mb-3">🎓</div>
+        <div class="text-2xl font-extrabold font-mono">{{ total_siswa }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Total Siswa Aktif</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">✓</div>
+        <div class="text-2xl font-extrabold font-mono">{{ hadir_siswa }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Hadir Hari Ini</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">📝</div>
+        <div class="text-2xl font-extrabold font-mono">{{ izin_siswa }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Izin / Sakit</div>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-3">⚠️</div>
+        <div class="text-2xl font-extrabold font-mono">{{ belum_absen_siswa }}</div>
+        <div class="text-xs text-gray-500 font-bold mt-1">Belum Absen / Alpa</div>
+      </div>
+    </div>
+
+    {% include "dashboard/_live_checkin.html" %}
+  {% endif %}
 
 {% endblock %}

@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/akademik/akun_guru_list.html (timpa yang lama) #}
 {% extends "base_admin.html" %}
 
 {% block content %}
@@ -7,13 +8,17 @@
   </div>
 
   <div class="bg-white border border-gray-200 rounded-2xl p-6">
-    <div class="flex justify-end mb-4">
+    <div class="flex justify-end gap-2 mb-4">
+      <a href="{% url 'akademik:guru_import' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">⬆ Migrasi Data</a>
+      <a href="{% url 'dashboard:index' %}?tab=guru" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">📊 Kehadiran Guru</a>
+      <a href="{% url 'perizinan:izin_guru_list' %}" class="px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-bold hover:bg-gray-50">✅ Approval Izin Guru</a>
       <a href="{% url 'akademik:akun_guru_create' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900">+ Tambah Akun Guru</a>
     </div>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
           <th class="pb-3">Nama</th>
+          <th class="pb-3">Username</th>
           <th class="pb-3">Email</th>
           <th class="pb-3">Wali Kelas Dari</th>
           <th class="pb-3">Status</th>
@@ -24,6 +29,7 @@
         {% for g in guru_list %}
         <tr class="border-b border-gray-100 last:border-0 {% if not g.user.is_active %}opacity-50{% endif %}">
           <td class="py-3 font-bold">{{ g.nama }}</td>
+          <td class="py-3 font-mono">{{ g.user.username }}</td>
           <td class="py-3 font-mono">{{ g.email }}</td>
           <td class="py-3">
             {% for k in g.kelas_diampu.all %}{{ k.nama_kelas }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
@@ -38,6 +44,7 @@
           <td class="py-3">
             <div class="flex gap-2">
               <a href="{% url 'akademik:akun_guru_edit' g.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Edit</a>
+              <a href="{% url 'akademik:guru_kartu' g.pk %}" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Kartu QR</a>
               <form method="post" action="{% url 'akademik:akun_guru_reset' g.pk %}" onsubmit="return confirm('Reset kata sandi {{ g.nama }}?');" class="inline">
                 {% csrf_token %}
                 <button type="submit" class="px-3 py-1.5 rounded-lg bg-stone-100 text-xs font-bold hover:bg-stone-200">Reset Sandi</button>
@@ -52,7 +59,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada akun guru.</td></tr>
+        <tr><td colspan="6" class="py-6 text-center text-gray-400">Belum ada akun guru.</td></tr>
         {% endfor %}
       </tbody>
     </table>

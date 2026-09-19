@@ -1,3 +1,5 @@
+# Simpan sebagai: akademik/forms.py
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -36,12 +38,20 @@ class AkunFormMixin:
 
 
 class SiswaForm(forms.ModelForm):
+    buat_akun_sekaligus = forms.BooleanField(
+        required=False, initial=True, label="Buatkan akun login sekaligus (username = NIS)",
+    )
+
     class Meta:
         model = Siswa
         fields = ["nis", "kode_kartu", "nama", "kelas", "jenis_kelamin", "aktif"]
 
     def __init__(self, *args, school=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            # Sedang mode Edit siswa yang sudah ada, bukan Tambah baru --
+            # checkbox "buat akun sekaligus" nggak relevan di situ.
+            del self.fields["buat_akun_sekaligus"]
         if school is not None:
             self.fields["kelas"].queryset = Kelas.objects.filter(school=school)
         for name, field in self.fields.items():
@@ -103,6 +113,34 @@ class OrangTuaEditForm(forms.ModelForm):
             self.fields["anak"].queryset = Siswa.objects.filter(school=school).order_by("nama")
         for name, field in self.fields.items():
             field.widget.attrs["class"] = INPUT_CLASS if name != "anak" else INPUT_CLASS + " h-40"
+
+
+class ImportSiswaForm(forms.Form):
+    file_excel = forms.FileField(label="File Excel (.xlsx)")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file_excel"].widget.attrs["class"] = INPUT_CLASS
+
+    def clean_file_excel(self):
+        f = self.cleaned_data["file_excel"]
+        if not f.name.lower().endswith((".xlsx", ".xlsm")):
+            raise forms.ValidationError("File harus berformat .xlsx (Excel).")
+        return f
+
+
+class ImportGuruForm(forms.Form):
+    file_excel = forms.FileField(label="File Excel (.xlsx)")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["file_excel"].widget.attrs["class"] = INPUT_CLASS
+
+    def clean_file_excel(self):
+        f = self.cleaned_data["file_excel"]
+        if not f.name.lower().endswith((".xlsx", ".xlsm")):
+            raise forms.ValidationError("File harus berformat .xlsx (Excel).")
+        return f
 
 
 class KelasForm(forms.ModelForm):

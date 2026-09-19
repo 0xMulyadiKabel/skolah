@@ -1,6 +1,12 @@
+{# Simpan sebagai: templates/perizinan/izin_list.html #}
 {% extends "base_admin.html" %}
 
 {% block content %}
+  <div class="flex gap-2 mb-5 bg-stone-100 p-1 rounded-xl w-fit">
+    <a href="{% url 'perizinan:izin_list' %}" class="px-5 py-2 rounded-lg text-xs font-extrabold bg-white text-emerald-800 shadow-sm">Tab Siswa</a>
+    <a href="{% url 'perizinan:izin_guru_list' %}" class="px-5 py-2 rounded-lg text-xs font-extrabold text-gray-500">Tab Guru</a>
+  </div>
+
   <div class="bg-white border border-gray-200 rounded-2xl p-6">
 
     <div class="flex gap-2 mb-5">
