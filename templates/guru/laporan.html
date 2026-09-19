@@ -24,6 +24,7 @@
       <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-800 text-white text-sm font-bold">Terapkan</button>
     </form>
     <p class="text-sm font-bold text-gray-500 mb-5">{{ kelas.nama_kelas }} · Periode: {{ awal|date:"d M Y" }} — {{ akhir|date:"d M Y" }}</p>
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
@@ -48,5 +49,6 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 {% endblock %}

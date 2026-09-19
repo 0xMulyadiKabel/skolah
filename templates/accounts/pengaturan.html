@@ -6,13 +6,22 @@
     <a href="{% url 'absensi:hari_libur_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-stone-100 text-gray-700 text-sm font-bold hover:bg-stone-200">
       📅 Kelola Kalender Akademik / Hari Libur
     </a>
-    <a href="{% url 'absensi:kiosk_gerbang' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-bold hover:bg-emerald-100">
-      🏫 Buka Kiosk Gerbang
-    </a>
-    <a href="{% url 'absensi:kiosk_sholat' %}" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-50 text-emerald-800 text-sm font-bold hover:bg-emerald-100">
-      🕌 Buka Kiosk Sholat
-    </a>
   </div>
+
+  <!-- KIOSK -- sengaja dipisah jadi card sendiri, bukan disatuin sama
+       pengaturan sensitif lain. Akses ke device Kiosk sekarang butuh
+       akun Kiosk terpisah, BUKAN sesi Admin -- link di sini cuma buat
+       KELOLA akunnya, bukan langsung "masuk" ke tampilan kiosk. -->
+  <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-5">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-sm font-extrabold">🔒 Akses Kiosk (Gerbang & Musholla)</div>
+        <div class="text-xs text-gray-500 mt-1">Device kiosk pakai akun terpisah dari Admin, demi keamanan.</div>
+      </div>
+      <a href="{% url 'accounts:kiosk_akun_list' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900 flex-shrink-0">Kelola Akun Kiosk</a>
+    </div>
+  </div>
+
   <form method="post">
     {% csrf_token %}
     <div class="grid grid-cols-2 gap-5">

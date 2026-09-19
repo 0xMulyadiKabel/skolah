@@ -1,0 +1,66 @@
+{# Simpan sebagai: templates/guru/beranda_pribadi.html #}
+{% extends "guru/base_guru_mobile.html" %}
+
+{% block content %}
+  <div class="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white px-5 pt-8 pb-14 rounded-b-3xl">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-xs opacity-75 font-bold">Assalamu'alaikum,</div>
+        <div class="text-lg font-extrabold">{{ guru.nama }}</div>
+      </div>
+      <form method="post" action="{% url 'accounts:guru_logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="text-xs font-bold bg-white/10 px-3 py-2 rounded-lg">Keluar</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="px-5 -mt-8">
+    <div class="bg-white rounded-2xl p-5 shadow-lg">
+      <div class="flex items-center gap-3">
+        {% if absensi_hari_ini and absensi_hari_ini.jam_masuk %}
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">✓</div>
+          <div>
+            <div class="text-[11px] font-bold text-gray-400">STATUS HARI INI</div>
+            <div class="text-sm font-extrabold">Sudah Absen Masuk</div>
+          </div>
+        {% else %}
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">⏱</div>
+          <div>
+            <div class="text-[11px] font-bold text-gray-400">STATUS HARI INI</div>
+            <div class="text-sm font-extrabold">Belum Absen Masuk</div>
+          </div>
+        {% endif %}
+      </div>
+      <p class="text-xs text-gray-400 mt-3">Absen dilakukan lewat Kiosk kartu di gerbang sekolah — tidak bisa dilakukan dari halaman ini.</p>
+      <div class="grid grid-cols-2 gap-2.5 mt-4">
+        <div class="bg-stone-50 rounded-xl p-3">
+          <div class="text-base font-extrabold font-mono">{{ absensi_hari_ini.jam_masuk|time:"H:i"|default:"—:—" }}</div>
+          <div class="text-[11px] text-gray-400 font-bold">Jam Masuk</div>
+        </div>
+        <div class="bg-stone-50 rounded-xl p-3">
+          <div class="text-base font-extrabold font-mono">{{ absensi_hari_ini.jam_pulang|time:"H:i"|default:"—:—" }}</div>
+          <div class="text-[11px] text-gray-400 font-bold">Jam Pulang</div>
+        </div>
+      </div>
+    </div>
+
+    <a href="{% url 'guru:dashboard' %}" class="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 mt-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">🏫</div>
+        <div>
+          <div class="text-sm font-extrabold">Kelas Saya</div>
+          <div class="text-[11px] text-gray-400">Kehadiran, Approval Izin, Laporan</div>
+        </div>
+      </div>
+      <span class="text-gray-300">→</span>
+    </a>
+
+    <div class="text-sm font-extrabold mt-6 mb-3">Ringkasan Bulan Ini</div>
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 grid grid-cols-3 gap-2 text-center">
+      <div class="bg-emerald-50 rounded-xl p-3"><div class="text-lg font-extrabold text-emerald-600">{{ hadir }}</div><div class="text-[10px] text-gray-500 font-bold">Hadir</div></div>
+      <div class="bg-amber-50 rounded-xl p-3"><div class="text-lg font-extrabold text-amber-600">{{ izin }}</div><div class="text-[10px] text-gray-500 font-bold">Izin/Sakit</div></div>
+      <div class="bg-red-50 rounded-xl p-3"><div class="text-lg font-extrabold text-red-600">{{ alpa }}</div><div class="text-[10px] text-gray-500 font-bold">Alpa</div></div>
+    </div>
+  </div>
+{% endblock %}

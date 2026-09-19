@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from accounts.utils import get_school
-from accounts.views import admin_required
+from accounts.views import admin_required, kiosk_required
 from akademik.models import Kelas, Guru, Siswa
 
 from .forms import HariLiburForm
@@ -166,13 +166,13 @@ def _sesi_sholat_aktif_saat_ini(school):
     ).first()
 
 
-@admin_required
+@kiosk_required
 def kiosk_gerbang(request):
     school = get_school(request)
     return render(request, "absensi/kiosk_gerbang.html", {"page_title": "Kiosk Absen Gerbang", "school": school})
 
 
-@admin_required
+@kiosk_required
 def kiosk_gerbang_submit(request):
     if request.method != "POST":
         return JsonResponse({"ok": False, "pesan": "Metode tidak diizinkan."}, status=405)
@@ -250,14 +250,14 @@ def _catat_absen_guru_kiosk(guru, school, today):
         return JsonResponse({"ok": False, "nama": guru.nama, "pesan": "Sudah absen masuk & pulang hari ini."})
 
 
-@admin_required
+@kiosk_required
 def kiosk_sholat(request):
     school = get_school(request)
     sesi = _sesi_sholat_aktif_saat_ini(school)
     return render(request, "absensi/kiosk_sholat.html", {"page_title": "Kiosk Absen Sholat", "school": school, "sesi": sesi})
 
 
-@admin_required
+@kiosk_required
 def kiosk_sholat_submit(request):
     if request.method != "POST":
         return JsonResponse({"ok": False, "pesan": "Metode tidak diizinkan."}, status=405)

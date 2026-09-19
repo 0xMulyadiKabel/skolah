@@ -1,3 +1,4 @@
+{# Simpan sebagai: templates/ortu/base_ortu.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="id">
@@ -9,7 +10,7 @@
 </head>
 <body class="bg-stone-100 text-gray-900">
 
-  <div class="bg-emerald-950 text-white px-7 py-4 flex items-center justify-between">
+  <div class="bg-emerald-950 text-white px-4 md:px-7 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">🕌</div>
       <div>
@@ -30,7 +31,7 @@
   </div>
 
   {% if anak_list %}
-  <div class="bg-white border-b border-gray-200 px-7 py-3 flex items-center gap-3 overflow-x-auto">
+  <div class="bg-white border-b border-gray-200 px-4 md:px-7 py-3 flex items-center gap-3 overflow-x-auto">
     <span class="text-xs font-bold text-gray-400 flex-shrink-0">Anak:</span>
     {% for a in anak_list %}
       <a href="{{ request.path }}?anak={{ a.id }}"
@@ -41,14 +42,14 @@
   </div>
   {% endif %}
 
-  <div class="bg-white border-b border-gray-200 px-7 flex gap-1">
-    <a href="{% url 'ortu:beranda' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'beranda' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🏠 Beranda</a>
-    <a href="{% url 'ortu:riwayat' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'riwayat' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🗓️ Riwayat</a>
-    <a href="{% url 'ortu:izin' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'izin' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">📝 Ajukan Izin</a>
-    <a href="{% url 'ortu:notifikasi' %}" class="px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'notifikasi' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🔔 Notifikasi</a>
+  <div class="bg-white border-b border-gray-200 px-4 md:px-7 flex gap-1 overflow-x-auto">
+    <a href="{% url 'ortu:beranda' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="flex-shrink-0 whitespace-nowrap px-3 md:px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'beranda' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🏠 Beranda</a>
+    <a href="{% url 'ortu:riwayat' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="flex-shrink-0 whitespace-nowrap px-3 md:px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'riwayat' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🗓️ Riwayat</a>
+    <a href="{% url 'ortu:izin' %}{% if anak %}?anak={{ anak.id }}{% endif %}" class="flex-shrink-0 whitespace-nowrap px-3 md:px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'izin' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">📝 Ajukan Izin</a>
+    <a href="{% url 'ortu:notifikasi' %}" class="flex-shrink-0 whitespace-nowrap px-3 md:px-4 py-3 text-sm font-bold border-b-2 {% if request.resolver_match.url_name == 'notifikasi' %}border-emerald-800 text-emerald-800{% else %}border-transparent text-gray-500{% endif %}">🔔 Notifikasi</a>
   </div>
 
-  <div class="max-w-2xl mx-auto p-6">
+  <div class="max-w-2xl mx-auto p-4 md:p-6">
     {% if messages %}
       {% for message in messages %}
         <div class="mb-5 px-4 py-3 rounded-xl text-sm font-bold bg-emerald-50 text-emerald-700 flex items-center justify-between">

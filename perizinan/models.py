@@ -91,6 +91,11 @@ class PengajuanIzinGuru(models.Model):
     )
     catatan_peninjau = models.TextField(blank=True)
 
+    last_modified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="izin_guru_terakhir_diubah",
+    )
+
     dibuat_pada = models.DateTimeField(auto_now_add=True)
     diperbarui_pada = models.DateTimeField(auto_now=True)
 
