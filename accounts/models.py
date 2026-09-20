@@ -47,6 +47,7 @@ class User(AbstractUser):
         GURU = "guru", "Guru / Wali Kelas"
         ORANG_TUA = "orang_tua", "Orang Tua"
         SISWA = "siswa", "Siswa"
+        KIOSK = "kiosk", "Kiosk (Device)"
 
     role = models.CharField(max_length=20, choices=Role.choices)
     school = models.ForeignKey(
