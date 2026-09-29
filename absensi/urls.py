@@ -16,4 +16,9 @@ urlpatterns = [
     path("kiosk/gerbang/submit/", views.kiosk_gerbang_submit, name="kiosk_gerbang_submit"),
     path("kiosk/sholat/", views.kiosk_sholat, name="kiosk_sholat"),
     path("kiosk/sholat/submit/", views.kiosk_sholat_submit, name="kiosk_sholat_submit"),
+    path("foto/harian/<int:pk>/<str:field>/", views.foto_absensi_harian, name="foto_absensi_harian"),
+    path("foto/sholat/<int:pk>/", views.foto_absensi_sholat, name="foto_absensi_sholat"),
+    path("foto/guru/<int:pk>/<str:field>/", views.foto_absensi_guru, name="foto_absensi_guru"),
+    path("bukti/izin-siswa/<int:pk>/", views.bukti_izin_siswa, name="bukti_izin_siswa"),
+    path("bukti/izin-guru/<int:pk>/", views.bukti_izin_guru, name="bukti_izin_guru"),
 ]

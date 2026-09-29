@@ -14,8 +14,8 @@
     {% if absensi_ada.foto_masuk %}
     <div class="mb-5">
       <div class="text-xs font-bold text-gray-400 mb-2">FOTO SELFIE SAAT ABSEN MASUK</div>
-      <a href="{{ absensi_ada.foto_masuk.url }}" target="_blank">
-        <img src="{{ absensi_ada.foto_masuk.url }}" class="w-32 h-32 object-cover rounded-xl border border-gray-200">
+      <a href="{% url 'absensi:foto_absensi_harian' absensi_ada.id 'masuk' %}" target="_blank">
+        <img src="{% url 'absensi:foto_absensi_harian' absensi_ada.id 'masuk' %}" class="w-32 h-32 object-cover rounded-xl border border-gray-200">
       </a>
     </div>
     {% endif %}

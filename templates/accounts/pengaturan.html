@@ -24,6 +24,22 @@
 
   <form method="post">
     {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+      <p class="text-sm font-extrabold text-red-700 mb-1">Ada isian yang belum valid, perubahan BELUM tersimpan:</p>
+      <ul class="text-xs text-red-600 list-disc pl-5">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
     <div class="grid grid-cols-2 gap-5">
 
       <!-- JAM & TOLERANSI -->
@@ -67,9 +83,44 @@
           <label class="block text-xs font-bold text-gray-500 mb-2">Metode Verifikasi Gerbang</label>
           {{ form.metode_verifikasi }}
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-500 mb-2">Radius Geofence dari Sekolah (meter)</label>
-          {{ form.radius_geofence_meter }}
+
+        <div class="border-t border-gray-100 pt-4 mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-gray-500">📍 Titik Gerbang (Absen Sekolah)</label>
+            <button type="button" onclick="pakaiLokasiSaya('latitude', 'longitude')" class="text-[11px] font-bold text-emerald-800">Pakai lokasi saya</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            {{ form.latitude }}
+            {{ form.longitude }}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">Radius</span>
+            {{ form.radius_geofence_meter }}
+            <span class="text-xs text-gray-400">meter</span>
+          </div>
+          {% if form.latitude.value and form.longitude.value %}
+          <a href="https://www.google.com/maps?q={{ form.latitude.value }},{{ form.longitude.value }}" target="_blank" class="text-[11px] text-emerald-800 underline">Lihat di peta</a>
+          {% endif %}
+        </div>
+
+        <div class="border-t border-gray-100 pt-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-gray-500">🕌 Titik Masjid (Absen Sholat)</label>
+            <button type="button" onclick="pakaiLokasiSaya('latitude_masjid', 'longitude_masjid')" class="text-[11px] font-bold text-emerald-800">Pakai lokasi saya</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
+            {{ form.latitude_masjid }}
+            {{ form.longitude_masjid }}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">Radius</span>
+            {{ form.radius_masjid_meter }}
+            <span class="text-xs text-gray-400">meter</span>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-1">Kosongkan kalau masjid satu titik sama gerbang — sistem otomatis pakai titik Gerbang di atas.</p>
+          {% if form.latitude_masjid.value and form.longitude_masjid.value %}
+          <a href="https://www.google.com/maps?q={{ form.latitude_masjid.value }},{{ form.longitude_masjid.value }}" target="_blank" class="text-[11px] text-emerald-800 underline">Lihat di peta</a>
+          {% endif %}
         </div>
       </div>
 
@@ -81,23 +132,68 @@
       <p class="text-xs text-gray-400 mb-4">Aktifkan sholat yang ingin didata kehadirannya. Siswa hanya diminta absen untuk sesi yang aktif di sini.</p>
 
       {% for sesi in sesi_list %}
-      <div class="flex items-center gap-5 py-3 border-b border-gray-100 last:border-0">
-        <div class="w-32 text-sm font-bold">{{ sesi.get_nama_sholat_display }}</div>
-        <label class="flex items-center gap-2">
-          <input type="checkbox" name="sesi_{{ sesi.id }}_aktif" {% if sesi.aktif %}checked{% endif %} class="h-4 w-4 rounded border-gray-300">
-          <span class="text-xs font-bold text-gray-500">Aktif</span>
-        </label>
-        <input type="time" name="sesi_{{ sesi.id }}_mulai" value="{{ sesi.jendela_mulai|time:'H:i' }}"
-               class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
-        <span class="text-xs text-gray-400">s/d</span>
-        <input type="time" name="sesi_{{ sesi.id }}_selesai" value="{{ sesi.jendela_selesai|time:'H:i' }}"
-               class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+      <div class="py-3 border-b border-gray-100 last:border-0">
+        <div class="flex items-center gap-5 mb-2">
+          <div class="w-32 text-sm font-bold">{{ sesi.get_nama_sholat_display }}</div>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="sesi_{{ sesi.id }}_aktif" {% if sesi.aktif %}checked{% endif %} class="h-4 w-4 rounded border-gray-300">
+            <span class="text-xs font-bold text-gray-500">Aktif</span>
+          </label>
+          <input type="time" name="sesi_{{ sesi.id }}_mulai" value="{{ sesi.jendela_mulai|time:'H:i' }}"
+                 class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+          <span class="text-xs text-gray-400">s/d</span>
+          <input type="time" name="sesi_{{ sesi.id }}_selesai" value="{{ sesi.jendela_selesai|time:'H:i' }}"
+                 class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+          <button type="submit" formaction="{% url 'accounts:sesi_sholat_hapus' sesi.id %}"
+                  onclick="return confirm('Hapus sesi {{ sesi.get_nama_sholat_display }} dari daftar yang dipantau? Ini akan menghilangkannya total, bukan cuma menonaktifkan.');"
+                  class="ml-auto text-xs font-bold text-red-500 hover:text-red-700">Hapus</button>
+        </div>
+        <div class="flex gap-3 flex-wrap text-xs font-bold pl-0">
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_senin" {% if sesi.aktif_senin %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Sen</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_selasa" {% if sesi.aktif_selasa %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Sel</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_rabu" {% if sesi.aktif_rabu %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Rab</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_kamis" {% if sesi.aktif_kamis %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Kam</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_jumat" {% if sesi.aktif_jumat %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Jum</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_sabtu" {% if sesi.aktif_sabtu %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Sab</label>
+          <label class="flex items-center gap-1.5"><input type="checkbox" name="sesi_{{ sesi.id }}_hari_minggu" {% if sesi.aktif_minggu %}checked{% endif %} class="h-3.5 w-3.5 rounded border-gray-300"> Min</label>
+        </div>
       </div>
+      {% empty %}
+      <p class="text-sm text-gray-400 text-center py-4">Belum ada sesi sholat yang dipantau. Tambahkan salah satu di bawah.</p>
       {% endfor %}
+
+      {% if sesi_belum_ada %}
+      <div class="flex items-center gap-2 pt-4 mt-2 border-t border-gray-100">
+        <select name="nama_sholat" class="px-3 py-2 rounded-lg border border-gray-200 text-sm">
+          {% for nilai, label in sesi_belum_ada %}
+          <option value="{{ nilai }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" formaction="{% url 'accounts:sesi_sholat_tambah' %}"
+                class="px-4 py-2 rounded-lg bg-stone-100 text-sm font-bold hover:bg-stone-200">+ Tambah Sesi</button>
+      </div>
+      {% endif %}
     </div>
 
     <button type="submit" class="mt-5 px-6 py-3 rounded-xl bg-emerald-800 text-white font-bold hover:bg-emerald-900 transition">
       Simpan Perubahan
     </button>
   </form>
+
+  <script>
+    function pakaiLokasiSaya(idLat, idLng) {
+      if (!navigator.geolocation) {
+        alert("Perangkat/browser ini tidak mendukung deteksi lokasi.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById('id_' + idLat).value = pos.coords.latitude.toFixed(7);
+          document.getElementById('id_' + idLng).value = pos.coords.longitude.toFixed(7);
+        },
+        (err) => alert("Gagal mengambil lokasi: " + err.message + ". Pastikan izin lokasi diaktifkan di browser."),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  </script>
 {% endblock %}

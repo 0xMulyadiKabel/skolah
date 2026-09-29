@@ -12,6 +12,7 @@ urlpatterns = [
     path("<int:pk>/setujui/", views.izin_setujui, name="izin_setujui"),
     path("<int:pk>/tolak/", views.izin_tolak, name="izin_tolak"),
     path("guru/", views.izin_guru_list, name="izin_guru_list"),
+    path("guru/<int:pk>/", views.izin_guru_detail, name="izin_guru_detail"),
     path("guru/<int:pk>/setujui/", views.izin_guru_setujui, name="izin_guru_setujui"),
     path("guru/<int:pk>/tolak/", views.izin_guru_tolak, name="izin_guru_tolak"),
 ]

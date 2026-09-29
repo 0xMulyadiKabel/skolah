@@ -32,7 +32,12 @@
           </div>
         {% endif %}
       </div>
-      <p class="text-xs text-gray-400 mt-3">Absen dilakukan lewat Kiosk kartu di gerbang sekolah — tidak bisa dilakukan dari halaman ini.</p>
+      <p class="text-xs text-gray-400 mt-3">Bisa absen lewat selfie di tab Absen, atau tap kartu di Kiosk gerbang.</p>
+      {% if not absensi_hari_ini or not absensi_hari_ini.jam_pulang %}
+      <a href="{% url 'guru:absen_pribadi' %}" class="block w-full mt-3 py-2.5 rounded-xl bg-emerald-800 text-white text-sm font-bold text-center">
+        🤳 {% if absensi_hari_ini and absensi_hari_ini.jam_masuk %}Absen Pulang Sekarang{% else %}Absen Masuk Sekarang{% endif %}
+      </a>
+      {% endif %}
       <div class="grid grid-cols-2 gap-2.5 mt-4">
         <div class="bg-stone-50 rounded-xl p-3">
           <div class="text-base font-extrabold font-mono">{{ absensi_hari_ini.jam_masuk|time:"H:i"|default:"—:—" }}</div>

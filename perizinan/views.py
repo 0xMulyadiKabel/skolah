@@ -71,6 +71,15 @@ from .models import PengajuanIzinGuru
 
 
 @admin_required
+def izin_guru_detail(request, pk):
+    izin = get_object_or_404(
+        PengajuanIzinGuru.objects.select_related("guru", "ditinjau_oleh", "last_modified_by"),
+        pk=pk, guru__school=_get_school(request),
+    )
+    return render(request, "perizinan/izin_guru_detail.html", {"page_title": "Detail Pengajuan Izin Guru", "izin": izin})
+
+
+@admin_required
 def izin_guru_list(request):
     school = _get_school(request)
     status = request.GET.get("status", "")

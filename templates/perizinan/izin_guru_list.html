@@ -24,7 +24,7 @@
       <tbody>
         {% for izin in izin_list %}
         <tr class="border-b border-gray-100 last:border-0">
-          <td class="py-3 font-bold">{{ izin.guru.nama }}</td>
+          <td class="py-3 font-bold"><a href="{% url 'perizinan:izin_guru_detail' izin.pk %}" class="hover:text-emerald-800 hover:underline">{{ izin.guru.nama }}</a></td>
           <td class="py-3">{{ izin.get_jenis_display }}</td>
           <td class="py-3 font-mono text-xs">{{ izin.tanggal_mulai }} s/d {{ izin.tanggal_selesai }}</td>
           <td class="py-3 text-xs text-gray-500 max-w-xs truncate">{{ izin.keterangan|default:"—" }}</td>

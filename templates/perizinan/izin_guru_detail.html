@@ -1,14 +1,14 @@
-{# Simpan sebagai: templates/perizinan/izin_detail.html #}
+{# Simpan sebagai: templates/perizinan/izin_guru_detail.html #}
 {% extends "base_admin.html" %}
 
 {% block content %}
-  <a href="{% url 'perizinan:izin_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Approval Izin</a>
+  <a href="{% url 'perizinan:izin_guru_list' %}" class="text-sm font-bold text-emerald-800 mb-4 inline-block">← Kembali ke Approval Izin</a>
 
   <div class="bg-white border border-gray-200 rounded-2xl p-7 max-w-2xl">
     <div class="flex items-center justify-between mb-6">
       <div>
-        <div class="text-lg font-extrabold">{{ izin.siswa.nama }}</div>
-        <div class="text-sm text-gray-500">{{ izin.siswa.kelas.nama_kelas }} · NIS {{ izin.siswa.nis|default:"—" }}</div>
+        <div class="text-lg font-extrabold">{{ izin.guru.nama }}</div>
+        <div class="text-sm text-gray-500">{{ izin.guru.user.username }} · {{ izin.guru.email|default:"—" }}</div>
       </div>
       {% if izin.status == 'disetujui' %}
         <span class="text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600">Disetujui</span>
@@ -25,11 +25,8 @@
         <div class="font-bold">{{ izin.get_jenis_display }}</div>
       </div>
       <div>
-        <div class="text-xs font-bold text-gray-400 mb-1">Diajukan Oleh</div>
-        <div class="font-bold">
-          {% if izin.diajukan_oleh == 'orang_tua' %}👤 Orang Tua{% else %}🎓 Siswa{% endif %}
-          {% if izin.diajukan_oleh_user %} — {{ izin.diajukan_oleh_user.username }}{% endif %}
-        </div>
+        <div class="text-xs font-bold text-gray-400 mb-1">Diajukan Pada</div>
+        <div class="font-mono">{{ izin.dibuat_pada|date:"d M Y, H:i" }}</div>
       </div>
       <div>
         <div class="text-xs font-bold text-gray-400 mb-1">Tanggal Mulai</div>
@@ -49,7 +46,7 @@
     <div class="mb-6">
       <div class="text-xs font-bold text-gray-400 mb-1">Bukti Pendukung</div>
       {% if izin.bukti %}
-        <a href="{% url 'absensi:bukti_izin_siswa' izin.id %}" target="_blank" class="inline-block text-sm font-bold text-emerald-800 bg-stone-50 rounded-xl px-4 py-2">📎 Lihat Berkas Bukti</a>
+        <a href="{% url 'absensi:bukti_izin_guru' izin.id %}" target="_blank" class="inline-block text-sm font-bold text-emerald-800 bg-stone-50 rounded-xl px-4 py-2">📎 Lihat Berkas Bukti</a>
       {% else %}
         <p class="text-sm text-gray-400">Tidak ada berkas dilampirkan.</p>
       {% endif %}
@@ -58,18 +55,22 @@
     {% if izin.status != 'menunggu' %}
       <div class="mb-6 text-sm bg-stone-50 rounded-xl p-4">
         <div class="text-xs font-bold text-gray-400 mb-1">Ditinjau Oleh</div>
-        <div class="font-bold">{{ izin.ditinjau_oleh.nama|default:"—" }}</div>
+        <div class="font-bold">{{ izin.ditinjau_oleh.username|default:"—" }}</div>
         {% if izin.catatan_peninjau %}<p class="text-gray-500 mt-2">{{ izin.catatan_peninjau }}</p>{% endif %}
       </div>
     {% endif %}
 
+    {% if izin.last_modified_by %}
+      <p class="text-xs text-gray-400 mb-6">Terakhir diubah oleh <b>{{ izin.last_modified_by.username }}</b> · {{ izin.diperbarui_pada|date:"d M Y, H:i" }}</p>
+    {% endif %}
+
     {% if izin.status == 'menunggu' %}
       <div class="flex gap-3">
-        <form method="post" action="{% url 'perizinan:izin_setujui' izin.pk %}" class="flex-1">
+        <form method="post" action="{% url 'perizinan:izin_guru_setujui' izin.pk %}" class="flex-1">
           {% csrf_token %}
           <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700">Setujui</button>
         </form>
-        <form method="post" action="{% url 'perizinan:izin_tolak' izin.pk %}" class="flex-1">
+        <form method="post" action="{% url 'perizinan:izin_guru_tolak' izin.pk %}" class="flex-1">
           {% csrf_token %}
           <button type="submit" class="w-full py-3 rounded-xl bg-red-50 text-red-600 font-bold hover:bg-red-100">Tolak</button>
         </form>

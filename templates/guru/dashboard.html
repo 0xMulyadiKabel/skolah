@@ -43,12 +43,19 @@
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">
-          <th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Status</th><th class="pb-3">Aksi</th>
+          <th class="pb-3">Foto</th><th class="pb-3">Siswa</th><th class="pb-3">Jam Masuk</th><th class="pb-3">Status</th><th class="pb-3">Aksi</th>
         </tr>
       </thead>
       <tbody>
         {% for b in baris %}
         <tr class="border-b border-gray-100 last:border-0">
+          <td class="py-3">
+            {% if b.absensi.foto_masuk %}
+            <a href="{% url 'absensi:foto_absensi_harian' b.absensi.id 'masuk' %}" target="_blank">
+              <img src="{% url 'absensi:foto_absensi_harian' b.absensi.id 'masuk' %}" class="w-9 h-9 rounded-lg object-cover border border-gray-200">
+            </a>
+            {% else %}<span class="text-gray-300">—</span>{% endif %}
+          </td>
           <td class="py-3 font-bold">{{ b.siswa.nama }}</td>
           <td class="py-3 font-mono">{{ b.absensi.jam_masuk|time:"H:i:s"|default:"—" }}</td>
           <td class="py-3">
@@ -64,7 +71,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="py-6 text-center text-gray-400">Belum ada siswa di kelas ini.</td></tr>
+        <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada siswa di kelas ini.</td></tr>
         {% endfor %}
       </tbody>
     </table>

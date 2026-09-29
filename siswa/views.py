@@ -1,18 +1,16 @@
 # Simpan sebagai: siswa/views.py
 
-import base64
 import json
 from datetime import date, datetime, timedelta
 
 from django.contrib import messages
-from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from absensi.models import AbsensiHarian, AbsensiSholat, HalanganSholat, SesiSholat
-from absensi.utils import get_jadwal_sholat, haversine_distance, is_hari_sekolah
+from absensi.utils import decode_foto_selfie, get_jadwal_sholat, haversine_distance, is_hari_sekolah
 from accounts.views import siswa_required
 from perizinan.forms import PengajuanIzinForm
 from perizinan.models import PengajuanIzin
@@ -21,18 +19,6 @@ from perizinan.utils import cek_izin_overlap_aktif, terapkan_edit_pengajuan_izin
 
 def _siswa_profile(request):
     return request.user.siswa
-
-
-def _decode_foto_selfie(foto_data_url, siswa, tanggal):
-    """
-    Foto dikirim dari browser sebagai data URL base64 (hasil canvas.toDataURL()),
-    formatnya 'data:image/jpeg;base64,xxxxx...'. Fungsi ini pecah jadi file
-    yang bisa disimpan ke ImageField.
-    """
-    header, imgstr = foto_data_url.split(";base64,")
-    ext = header.split("/")[-1]  # contoh: "jpeg"
-    nama_file = f"{siswa.nis or siswa.id}_{tanggal.isoformat()}.{ext}"
-    return ContentFile(base64.b64decode(imgstr), name=nama_file)
 
 
 @siswa_required
@@ -81,7 +67,7 @@ def absen(request):
     school = siswa.school
     today = timezone.localdate()
 
-    sesi_aktif = SesiSholat.objects.filter(school=school, aktif=True).order_by("id")
+    sesi_aktif = [s for s in SesiSholat.objects.filter(school=school, aktif=True).order_by("id") if s.aktif_pada_tanggal(today)]
     sudah_absen_sholat = set(
         AbsensiSholat.objects.filter(siswa=siswa, tanggal=today, hadir=True).values_list("sesi_sholat_id", flat=True)
     )
@@ -124,7 +110,7 @@ def absen_submit(request):
         if not foto_data_url:
             return JsonResponse({"ok": False, "pesan": "Foto selfie belum diambil. Coba lagi."})
         try:
-            foto_file = _decode_foto_selfie(foto_data_url, siswa, today)
+            foto_file = decode_foto_selfie(foto_data_url, siswa.nis or siswa.id, today)
         except (ValueError, IndexError):
             return JsonResponse({"ok": False, "pesan": "Format foto tidak valid, coba ulangi."})
     else:
@@ -202,18 +188,28 @@ def absen_sholat_submit(request, sesi_id):
     if not foto_data_url:
         return JsonResponse({"ok": False, "pesan": "Foto selfie belum diambil. Coba lagi."})
     try:
-        foto_file = _decode_foto_selfie(foto_data_url, siswa, today)
+        foto_file = decode_foto_selfie(foto_data_url, siswa.nis or siswa.id, today)
     except (ValueError, IndexError):
         return JsonResponse({"ok": False, "pesan": "Format foto tidak valid, coba ulangi."})
 
+    if not sesi.aktif_pada_tanggal(today):
+        return JsonResponse({"ok": False, "pesan": f"Sesi {sesi.get_nama_sholat_display()} tidak aktif untuk hari ini."})
+
+    # Validasi lokasi pakai titik MASJID, bukan titik gerbang -- kalau
+    # Admin belum sempat isi titik masjid, jatuhkan ke titik gerbang biar
+    # tidak mendadak semua absen sholat gagal gara-gara data kosong.
+    lat_masjid = school.latitude_masjid if school.latitude_masjid is not None else school.latitude
+    lng_masjid = school.longitude_masjid if school.longitude_masjid is not None else school.longitude
+    radius_masjid = school.radius_masjid_meter or school.radius_geofence_meter
+
     if lat is None or lng is None:
         return JsonResponse({"ok": False, "pesan": "Lokasi tidak terdeteksi. Aktifkan GPS dan izinkan akses lokasi di browser."})
-    jarak = haversine_distance(float(lat), float(lng), float(school.latitude), float(school.longitude))
-    lokasi_valid = jarak <= school.radius_geofence_meter
+    jarak = haversine_distance(float(lat), float(lng), float(lat_masjid), float(lng_masjid))
+    lokasi_valid = jarak <= radius_masjid
     if not lokasi_valid:
         return JsonResponse({
             "ok": False,
-            "pesan": f"Kamu berada sekitar {int(jarak)}m dari sekolah, di luar radius yang diizinkan ({school.radius_geofence_meter}m).",
+            "pesan": f"Kamu berada sekitar {int(jarak)}m dari masjid, di luar radius yang diizinkan ({radius_masjid}m).",
         })
 
     now_time = timezone.localtime().time()

@@ -10,6 +10,7 @@ from akademik.models import Guru, Siswa
 class SesiSholat(models.Model):
     class NamaSholat(models.TextChoices):
         SUBUH = "subuh", "Subuh"
+        DHUHA = "dhuha", "Dhuha"
         DZUHUR = "dzuhur", "Dzuhur"
         ASHAR = "ashar", "Ashar"
         MAGHRIB = "maghrib", "Maghrib"
@@ -21,10 +22,32 @@ class SesiSholat(models.Model):
     jendela_mulai = models.TimeField(null=True, blank=True)
     jendela_selesai = models.TimeField(null=True, blank=True)
 
+    # Hari aktif PER SESI -- pola sama persis kayak School.aktif_senin dkk.
+    # Ini yang bikin Dzuhur bisa Senin-Kamis sementara Dhuha cuma Rabu,
+    # tanpa dua-duanya saling ganggu.
+    aktif_senin = models.BooleanField(default=True)
+    aktif_selasa = models.BooleanField(default=True)
+    aktif_rabu = models.BooleanField(default=True)
+    aktif_kamis = models.BooleanField(default=True)
+    aktif_jumat = models.BooleanField(default=True)
+    aktif_sabtu = models.BooleanField(default=False)
+    aktif_minggu = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "Sesi Sholat"
         verbose_name_plural = "Sesi Sholat"
         unique_together = ("school", "nama_sholat")
+
+    def aktif_pada_tanggal(self, tanggal):
+        """True kalau sesi ini aktif DAN hari ini termasuk hari yang
+        dicentang Admin buat sesi ini. weekday(): 0=Senin ... 6=Minggu."""
+        if not self.aktif:
+            return False
+        field_per_hari = [
+            self.aktif_senin, self.aktif_selasa, self.aktif_rabu, self.aktif_kamis,
+            self.aktif_jumat, self.aktif_sabtu, self.aktif_minggu,
+        ]
+        return field_per_hari[tanggal.weekday()]
 
     def __str__(self):
         status = "aktif" if self.aktif else "nonaktif"
@@ -139,9 +162,8 @@ class AbsensiGuru(models.Model):
     """
     Kehadiran Guru -- sengaja model TERPISAH dari AbsensiHarian (siswa),
     bukan digabung pakai polymorphic/generic FK. Alasannya: kebutuhan Guru
-    lebih sederhana (cuma masuk/pulang, tanpa sholat jamaah, tanpa lokasi
-    GPS/selfie -- cuma kartu lewat Kiosk), jadi struktur terpisah lebih
-    jelas dibanding maksain satu tabel buat dua kebutuhan yang beda bentuk.
+    beda konteks (tanpa sholat jamaah), jadi struktur terpisah lebih jelas
+    dibanding maksain satu tabel buat dua kebutuhan yang beda bentuk.
     """
 
     class Status(models.TextChoices):
@@ -151,6 +173,7 @@ class AbsensiGuru(models.Model):
         IZIN = "izin", "Izin/Sakit"
 
     class Metode(models.TextChoices):
+        SELFIE_LOKASI = "selfie_lokasi", "Selfie + Lokasi GPS"
         BARCODE_KARTU = "barcode_kartu", "Kartu (Kiosk)"
 
     guru = models.ForeignKey(Guru, on_delete=models.CASCADE, related_name="absensi_guru")
@@ -158,9 +181,13 @@ class AbsensiGuru(models.Model):
 
     jam_masuk = models.TimeField(null=True, blank=True)
     metode_masuk = models.CharField(max_length=20, choices=Metode.choices, null=True, blank=True)
+    lokasi_valid_masuk = models.BooleanField(default=False)
+    foto_masuk = models.ImageField(upload_to="absensi_guru_selfie/%Y/%m/%d/", null=True, blank=True)
 
     jam_pulang = models.TimeField(null=True, blank=True)
     metode_pulang = models.CharField(max_length=20, choices=Metode.choices, null=True, blank=True)
+    lokasi_valid_pulang = models.BooleanField(default=False)
+    foto_pulang = models.ImageField(upload_to="absensi_guru_selfie/%Y/%m/%d/", null=True, blank=True)
 
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.ALPA)
 

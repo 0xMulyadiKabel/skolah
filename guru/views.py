@@ -1,14 +1,16 @@
 # Simpan sebagai: guru/views.py
 
-from datetime import date
+import json
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from absensi.forms import KoreksiAbsensiForm
 from absensi.models import AbsensiGuru, AbsensiHarian
-from absensi.utils import catat_koreksi_absensi
+from absensi.utils import catat_koreksi_absensi, decode_foto_selfie, haversine_distance, is_hari_sekolah
 from accounts.views import guru_required
 from akademik.models import Siswa
 from perizinan.forms import PengajuanIzinGuruForm
@@ -32,6 +34,85 @@ def _kelas_terpilih(request, guru):
         if dipilih:
             return dipilih, kelas_list
     return kelas_list.first(), kelas_list
+
+
+@guru_required
+def absen_pribadi(request):
+    guru = _guru_profile(request)
+    school = guru.school
+    today = timezone.localdate()
+    absensi_hari_ini = AbsensiGuru.objects.filter(guru=guru, tanggal=today).first()
+
+    context = {
+        "page_title": "Absen",
+        "sudah_masuk": bool(absensi_hari_ini and absensi_hari_ini.jam_masuk),
+        "sudah_pulang": bool(absensi_hari_ini and absensi_hari_ini.jam_pulang),
+        "hari_sekolah": is_hari_sekolah(school, today),
+    }
+    return render(request, "guru/absen_pribadi.html", context)
+
+
+@guru_required
+def absen_pribadi_submit(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "pesan": "Metode tidak diizinkan."}, status=405)
+
+    guru = _guru_profile(request)
+    school = guru.school
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "pesan": "Data tidak valid."}, status=400)
+
+    foto_data_url = data.get("foto", "")
+    lat = data.get("latitude")
+    lng = data.get("longitude")
+    today = timezone.localdate()
+
+    if not is_hari_sekolah(school, today):
+        return JsonResponse({"ok": False, "pesan": "Hari ini bukan hari sekolah aktif (libur/akhir pekan), absen tidak dapat dicatat."})
+
+    if not foto_data_url:
+        return JsonResponse({"ok": False, "pesan": "Foto selfie belum diambil. Coba lagi."})
+    try:
+        foto_file = decode_foto_selfie(foto_data_url, guru.user.username, today)
+    except (ValueError, IndexError):
+        return JsonResponse({"ok": False, "pesan": "Format foto tidak valid, coba ulangi."})
+
+    if lat is None or lng is None:
+        return JsonResponse({"ok": False, "pesan": "Lokasi tidak terdeteksi. Aktifkan GPS dan izinkan akses lokasi di browser."})
+    jarak = haversine_distance(float(lat), float(lng), float(school.latitude), float(school.longitude))
+    lokasi_valid = jarak <= school.radius_geofence_meter
+    if not lokasi_valid:
+        return JsonResponse({
+            "ok": False,
+            "pesan": f"Kamu berada sekitar {int(jarak)}m dari sekolah, di luar radius yang diizinkan ({school.radius_geofence_meter}m).",
+        })
+
+    now = timezone.localtime().time()
+    absensi, _ = AbsensiGuru.objects.get_or_create(guru=guru, tanggal=today)
+
+    if not absensi.jam_masuk:
+        absensi.jam_masuk = now
+        absensi.metode_masuk = AbsensiGuru.Metode.SELFIE_LOKASI
+        absensi.lokasi_valid_masuk = lokasi_valid
+        absensi.foto_masuk = foto_file
+        batas_telat_dt = datetime.combine(today, school.jam_masuk) + timedelta(minutes=school.toleransi_keterlambatan_menit)
+        absensi.status = AbsensiGuru.Status.HADIR if now <= batas_telat_dt.time() else AbsensiGuru.Status.TERLAMBAT
+        absensi.save()
+        return JsonResponse({"ok": True, "pesan": f"Absen masuk berhasil dicatat pukul {now.strftime('%H:%M')}."})
+
+    elif not absensi.jam_pulang:
+        absensi.jam_pulang = now
+        absensi.metode_pulang = AbsensiGuru.Metode.SELFIE_LOKASI
+        absensi.lokasi_valid_pulang = lokasi_valid
+        absensi.foto_pulang = foto_file
+        absensi.save()
+        return JsonResponse({"ok": True, "pesan": f"Absen pulang berhasil dicatat pukul {now.strftime('%H:%M')}."})
+
+    else:
+        return JsonResponse({"ok": False, "pesan": "Kamu sudah absen masuk dan pulang hari ini."})
 
 
 @guru_required

@@ -9,13 +9,22 @@ class School(models.Model):
 
     nama = models.CharField(max_length=150)
     alamat = models.TextField(blank=True)
+
+    # Titik Gerbang -- dipakai buat validasi Absen Sekolah (masuk/pulang)
     latitude = models.DecimalField(max_digits=10, decimal_places=7)
     longitude = models.DecimalField(max_digits=10, decimal_places=7)
+    radius_geofence_meter = models.PositiveSmallIntegerField(default=100)
+
+    # Titik Masjid -- terpisah dari titik Gerbang, dipakai khusus buat
+    # validasi Absen Sholat Berjamaah. Nullable karena sekolah lama belum
+    # tentu langsung isi ini pas pertama kali fitur ini dirilis.
+    latitude_masjid = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    longitude_masjid = models.DecimalField(max_digits=10, decimal_places=7, null=True, blank=True)
+    radius_masjid_meter = models.PositiveSmallIntegerField(default=100, null=True, blank=True)
 
     jam_masuk = models.TimeField(default="06:45")
     jam_pulang = models.TimeField(default="15:30")
     toleransi_keterlambatan_menit = models.PositiveSmallIntegerField(default=15)
-    radius_geofence_meter = models.PositiveSmallIntegerField(default=100)
     metode_verifikasi = models.CharField(
         max_length=15, choices=MetodeVerifikasi.choices, default=MetodeVerifikasi.SELFIE_DAN_LOKASI
     )

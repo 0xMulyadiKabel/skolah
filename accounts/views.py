@@ -110,6 +110,13 @@ def pengaturan(request):
     school = _get_school(request)
     sesi_list = list(SesiSholat.objects.filter(school=school).order_by("id"))
 
+    # Buat dropdown "+ Tambah Sesi" -- cuma tampilkan jenis sholat yang
+    # BELUM ada baris-nya buat sekolah ini, biar nggak bisa nambah dobel.
+    sudah_ada = {s.nama_sholat for s in sesi_list}
+    sesi_belum_ada = [(nilai, label) for nilai, label in SesiSholat.NamaSholat.choices if nilai not in sudah_ada]
+
+    HARI_FIELDS = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]
+
     if request.method == "POST":
         form = SchoolSettingsForm(request.POST, instance=school)
         if form.is_valid():
@@ -120,14 +127,48 @@ def pengaturan(request):
                 selesai = request.POST.get(f"sesi_{sesi.id}_selesai") or None
                 sesi.jendela_mulai = mulai
                 sesi.jendela_selesai = selesai
+                for hari in HARI_FIELDS:
+                    setattr(sesi, f"aktif_{hari}", request.POST.get(f"sesi_{sesi.id}_hari_{hari}") == "on")
                 sesi.save()
             messages.success(request, "Pengaturan berhasil disimpan.")
             return redirect("accounts:pengaturan")
     else:
         form = SchoolSettingsForm(instance=school)
 
-    context = {"page_title": "Pengaturan", "form": form, "sesi_list": sesi_list}
+    context = {"page_title": "Pengaturan", "form": form, "sesi_list": sesi_list, "sesi_belum_ada": sesi_belum_ada}
     return render(request, "accounts/pengaturan.html", context)
+
+
+@admin_required
+def sesi_sholat_tambah(request):
+    from absensi.models import SesiSholat
+
+    school = _get_school(request)
+    if request.method == "POST":
+        nama = request.POST.get("nama_sholat", "")
+        label_map = dict(SesiSholat.NamaSholat.choices)
+        if nama not in label_map:
+            messages.error(request, "Jenis sholat tidak dikenali.")
+        else:
+            _, created = SesiSholat.objects.get_or_create(school=school, nama_sholat=nama)
+            if created:
+                messages.success(request, f"Sesi {label_map[nama]} ditambahkan ke daftar. Atur jam & hari aktifnya, lalu Simpan.")
+            else:
+                messages.info(request, f"Sesi {label_map[nama]} sudah ada di daftar.")
+    return redirect("accounts:pengaturan")
+
+
+@admin_required
+def sesi_sholat_hapus(request, pk):
+    from absensi.models import SesiSholat
+
+    school = _get_school(request)
+    sesi = get_object_or_404(SesiSholat, pk=pk, school=school)
+    if request.method == "POST":
+        nama = sesi.get_nama_sholat_display()
+        sesi.delete()
+        messages.success(request, f"Sesi {nama} dihapus dari daftar yang dipantau.")
+    return redirect("accounts:pengaturan")
 
 
 @kiosk_required

@@ -8,6 +8,8 @@ app_name = "guru"
 
 urlpatterns = [
     path("", views.beranda_pribadi, name="beranda_pribadi"),
+    path("absen/", views.absen_pribadi, name="absen_pribadi"),
+    path("absen/submit/", views.absen_pribadi_submit, name="absen_pribadi_submit"),
     path("riwayat/", views.riwayat_pribadi, name="riwayat_pribadi"),
     path("izin-saya/", views.izin_pribadi, name="izin_pribadi"),
     path("izin-saya/<int:pk>/edit/", views.izin_pribadi_edit, name="izin_pribadi_edit"),

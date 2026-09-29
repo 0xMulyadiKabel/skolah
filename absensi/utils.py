@@ -7,6 +7,45 @@ from django.core.cache import cache
 from django.utils import timezone
 
 
+def decode_foto_selfie(foto_data_url, identifier, tanggal):
+    """
+    Foto dikirim dari browser sebagai data URL base64 (hasil canvas.toDataURL()),
+    formatnya 'data:image/jpeg;base64,xxxxx...'. Fungsi ini pecah jadi file
+    yang bisa disimpan ke ImageField. `identifier` bebas apa aja yang bisa
+    di-str() -- NIS siswa, username guru, dst -- dipakai buat nama file.
+
+    Sekalian diperkecil ke lebar maksimal 640px -- selfie dari HP modern
+    bisa beberapa MB, padahal buat verifikasi kehadiran nggak butuh resolusi
+    tinggi. Ini yang bikin tabel Dashboard/Koreksi ringan pas nampilin
+    banyak thumbnail sekaligus, dan storage server jauh lebih hemat.
+    """
+    import base64
+    from io import BytesIO
+
+    from django.core.files.base import ContentFile
+
+    header, imgstr = foto_data_url.split(";base64,")
+    ext = header.split("/")[-1]  # contoh: "jpeg"
+    raw_bytes = base64.b64decode(imgstr)
+
+    try:
+        from PIL import Image
+
+        img = Image.open(BytesIO(raw_bytes)).convert("RGB")
+        if img.width > 640:
+            rasio = 640 / img.width
+            img = img.resize((640, int(img.height * rasio)))
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=80)
+        raw_bytes = buf.getvalue()
+        ext = "jpg"
+    except Exception:
+        pass  # kalau resize gagal karena alasan apapun, tetap simpan foto asli daripada gagal total
+
+    nama_file = f"{identifier}_{tanggal.isoformat()}.{ext}"
+    return ContentFile(raw_bytes, name=nama_file)
+
+
 def haversine_distance(lat1, lon1, lat2, lon2):
     """Jarak garis lurus (meter) antara dua titik koordinat GPS."""
     R = 6371000  # radius Bumi dalam meter

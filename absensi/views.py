@@ -159,11 +159,17 @@ def hari_libur_delete(request, pk):
 
 def _sesi_sholat_aktif_saat_ini(school):
     """Cari sesi sholat yang jendela waktunya mencakup jam sekarang, dari
-    sesi-sesi yang diaktifkan Admin. None kalau nggak ada sesi aktif detik ini."""
+    sesi-sesi yang diaktifkan Admin UNTUK HARI INI. None kalau nggak ada
+    sesi aktif detik ini (baik soal jam maupun soal hari)."""
+    today = timezone.localdate()
     now_time = timezone.localtime().time()
-    return SesiSholat.objects.filter(
+    kandidat = SesiSholat.objects.filter(
         school=school, aktif=True, jendela_mulai__lte=now_time, jendela_selesai__gte=now_time,
-    ).first()
+    )
+    for sesi in kandidat:
+        if sesi.aktif_pada_tanggal(today):
+            return sesi
+    return None
 
 
 @kiosk_required
@@ -287,3 +293,105 @@ def kiosk_sholat_submit(request):
         return JsonResponse({"ok": False, "nama": siswa.nama, "pesan": f"Sudah tercatat hadir sholat {sesi.get_nama_sholat_display()}."})
 
     return JsonResponse({"ok": True, "nama": siswa.nama, "pesan": f"Absen sholat {sesi.get_nama_sholat_display()} pukul {now.strftime('%H:%M')}"})
+
+
+# ================= AKSES FOTO & BUKTI IZIN (TERPROTEKSI) =================
+# Sebelum ini, /media/ dilayani Nginx langsung tanpa login -- siapapun yang
+# tahu/nebak URL-nya bisa buka foto siswa atau surat sakit. Sekarang SEMUA
+# akses foto/bukti WAJIB lewat view ini, yang ngecek hak akses dulu sebelum
+# streaming file-nya. Nginx TIDAK BOLEH lagi expose /media/ langsung.
+
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, Http404
+
+
+def _bisa_lihat_data_siswa(user, siswa):
+    """True kalau user ini berhak lihat data (foto/bukti) milik siswa
+    tsb: Admin sekolah yang sama, Guru wali kelas siswa itu, siswa itu
+    sendiri, atau Orang Tua yang terhubung ke siswa itu."""
+    if user.role == "admin":
+        return siswa.school_id == user.school_id
+    if user.role == "guru":
+        try:
+            return siswa.kelas_id in user.guru.kelas_diampu.values_list("id", flat=True)
+        except Exception:
+            return False
+    if user.role == "siswa":
+        try:
+            return user.siswa.id == siswa.id
+        except Exception:
+            return False
+    if user.role == "orang_tua":
+        try:
+            return user.orangtua.anak.filter(id=siswa.id).exists()
+        except Exception:
+            return False
+    return False
+
+
+def _bisa_lihat_data_guru(user, guru):
+    """True kalau user ini berhak lihat data (foto/bukti) milik guru
+    tsb: Admin sekolah yang sama, atau guru itu sendiri."""
+    if user.role == "admin":
+        return guru.school_id == user.school_id
+    if user.role == "guru":
+        try:
+            return user.guru.id == guru.id
+        except Exception:
+            return False
+    return False
+
+
+def _serve_file(field_file):
+    if not field_file:
+        raise Http404("Belum ada file.")
+    try:
+        return FileResponse(field_file.open("rb"))
+    except FileNotFoundError:
+        raise Http404("File tidak ditemukan di server.")
+
+
+@login_required
+def foto_absensi_harian(request, pk, field):
+    absensi = get_object_or_404(AbsensiHarian, pk=pk)
+    if not _bisa_lihat_data_siswa(request.user, absensi.siswa):
+        raise Http404()
+    file_field = absensi.foto_masuk if field == "masuk" else absensi.foto_pulang
+    return _serve_file(file_field)
+
+
+@login_required
+def foto_absensi_sholat(request, pk):
+    absensi = get_object_or_404(AbsensiSholat, pk=pk)
+    if not _bisa_lihat_data_siswa(request.user, absensi.siswa):
+        raise Http404()
+    return _serve_file(absensi.foto)
+
+
+@login_required
+def foto_absensi_guru(request, pk, field):
+    absensi = get_object_or_404(AbsensiGuru, pk=pk)
+    if not _bisa_lihat_data_guru(request.user, absensi.guru):
+        raise Http404()
+    file_field = absensi.foto_masuk if field == "masuk" else absensi.foto_pulang
+    return _serve_file(file_field)
+
+
+@login_required
+def bukti_izin_siswa(request, pk):
+    from perizinan.models import PengajuanIzin
+
+    izin = get_object_or_404(PengajuanIzin, pk=pk)
+    if not _bisa_lihat_data_siswa(request.user, izin.siswa):
+        raise Http404()
+    return _serve_file(izin.bukti)
+
+
+@login_required
+def bukti_izin_guru(request, pk):
+    from perizinan.models import PengajuanIzinGuru
+
+    izin = get_object_or_404(PengajuanIzinGuru, pk=pk)
+    if not _bisa_lihat_data_guru(request.user, izin.guru):
+        raise Http404()
+    return _serve_file(izin.bukti)

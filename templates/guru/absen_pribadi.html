@@ -1,0 +1,137 @@
+{# Simpan sebagai: templates/guru/absen_pribadi.html #}
+{% extends "guru/base_guru_mobile.html" %}
+
+{% block content %}
+  <div class="p-5">
+    <h1 class="text-lg font-extrabold mb-4">Absen</h1>
+
+    {% if not hari_sekolah %}
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+        <div class="text-3xl mb-2">📅</div>
+        <p class="text-sm text-amber-800 font-bold">Hari ini bukan hari sekolah aktif</p>
+        <p class="text-xs text-amber-700 mt-1">Absen tidak dapat dicatat hari ini.</p>
+      </div>
+    {% elif sudah_masuk and sudah_pulang %}
+      <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center">
+        <div class="text-3xl mb-2">✅</div>
+        <p class="text-sm text-emerald-800 font-bold">Sudah absen masuk & pulang hari ini</p>
+      </div>
+    {% else %}
+      <div id="pra-selfie" class="bg-white rounded-2xl border border-gray-100 p-6 text-center">
+        <div class="text-3xl mb-3">🤳</div>
+        <p class="text-sm text-gray-500 mb-4">
+          {% if sudah_masuk %}Ambil foto selfie untuk mencatat absen pulang.{% else %}Ambil foto selfie untuk mencatat absen masuk.{% endif %}
+          Lokasi kamu juga akan diverifikasi.
+        </p>
+        <button id="btn-mulai" class="w-full py-3 rounded-xl bg-emerald-800 text-white font-bold">Buka Kamera</button>
+      </div>
+
+      <div id="kamera-area" class="hidden bg-white rounded-2xl border border-gray-100 p-4">
+        <video id="camera-preview" autoplay playsinline class="w-full rounded-xl bg-black" style="transform: scaleX(-1);"></video>
+        <canvas id="capture-canvas" class="hidden"></canvas>
+        <button id="btn-ambil-foto" class="w-full mt-4 py-3 rounded-xl bg-emerald-800 text-white font-bold">📸 Ambil Foto</button>
+        <p id="status-text" class="text-xs text-gray-400 text-center mt-3">Posisikan wajahmu di tengah frame.</p>
+      </div>
+
+      <div id="hasil" class="hidden mt-4 p-4 rounded-2xl text-sm font-bold"></div>
+      <button id="btn-ulang" class="hidden w-full mt-4 py-3 rounded-xl border border-gray-200 text-sm font-bold">Coba Lagi</button>
+    {% endif %}
+  </div>
+
+  {% if hari_sekolah and not sudah_pulang %}
+  <script>
+    const btnMulai = document.getElementById('btn-mulai');
+    const btnAmbilFoto = document.getElementById('btn-ambil-foto');
+    const btnUlang = document.getElementById('btn-ulang');
+    const praSelfie = document.getElementById('pra-selfie');
+    const kameraArea = document.getElementById('kamera-area');
+    const statusText = document.getElementById('status-text');
+    const hasilBox = document.getElementById('hasil');
+    const video = document.getElementById('camera-preview');
+    const canvas = document.getElementById('capture-canvas');
+    let cameraStream;
+
+    btnMulai.addEventListener('click', mulaiKamera);
+    btnUlang.addEventListener('click', () => {
+      hasilBox.classList.add('hidden');
+      btnUlang.classList.add('hidden');
+      mulaiKamera();
+    });
+
+    async function mulaiKamera() {
+      praSelfie.classList.add('hidden');
+      kameraArea.classList.remove('hidden');
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = cameraStream;
+      } catch (err) {
+        kameraArea.classList.add('hidden');
+        tampilkanHasil(false, "Gagal akses kamera: " + err + ". Pastikan izin kamera diaktifkan di browser.");
+      }
+    }
+
+    btnAmbilFoto.addEventListener('click', () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
+
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      kameraArea.classList.add('hidden');
+      statusText.textContent = "Foto diambil, mengambil lokasi...";
+
+      const fotoDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      ambilLokasiDanKirim(fotoDataUrl);
+    });
+
+    function ambilLokasiDanKirim(fotoDataUrl) {
+      if (!navigator.geolocation) {
+        tampilkanHasil(false, "Perangkat tidak mendukung deteksi lokasi.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => kirimAbsen(fotoDataUrl, pos.coords.latitude, pos.coords.longitude),
+        (err) => tampilkanHasil(false, "Gagal mengambil lokasi: " + err.message + ". Aktifkan GPS dan izinkan akses lokasi."),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function kirimAbsen(foto, lat, lng) {
+      fetch("{% url 'guru:absen_pribadi_submit' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+        body: JSON.stringify({ foto: foto, latitude: lat, longitude: lng }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          tampilkanHasil(data.ok, data.pesan);
+          if (data.ok) setTimeout(() => window.location.reload(), 1500);
+        })
+        .catch(() => tampilkanHasil(false, "Terjadi kesalahan jaringan, coba lagi."));
+    }
+
+    function tampilkanHasil(ok, pesan) {
+      hasilBox.classList.remove('hidden');
+      if (!ok) btnUlang.classList.remove('hidden');
+      hasilBox.className = "mt-4 p-4 rounded-2xl text-sm font-bold " + (ok ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700");
+      hasilBox.textContent = pesan;
+    }
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie) {
+        for (let cookie of document.cookie.split(";")) {
+          cookie = cookie.trim();
+          if (cookie.startsWith(name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  </script>
+  {% endif %}
+{% endblock %}

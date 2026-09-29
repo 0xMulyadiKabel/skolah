@@ -3,7 +3,7 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
-from .views import AdminLoginView, GuruLoginView, KioskLoginView, OrtuLoginView, SiswaLoginView, kiosk_akun_create, kiosk_akun_delete, kiosk_akun_list, kiosk_akun_reset, kiosk_pilih, pengaturan
+from .views import AdminLoginView, GuruLoginView, KioskLoginView, OrtuLoginView, SiswaLoginView, kiosk_akun_create, kiosk_akun_delete, kiosk_akun_list, kiosk_akun_reset, kiosk_pilih, pengaturan, sesi_sholat_hapus, sesi_sholat_tambah
 
 app_name = "accounts"
 
@@ -20,6 +20,8 @@ urlpatterns = [
     path("ortu/logout/", auth_views.LogoutView.as_view(next_page="accounts:ortu_login"), name="ortu_logout"),
     path("kiosk/logout/", auth_views.LogoutView.as_view(next_page="accounts:kiosk_login"), name="kiosk_logout"),
     path("pengaturan/", pengaturan, name="pengaturan"),
+    path("pengaturan/sesi-sholat/tambah/", sesi_sholat_tambah, name="sesi_sholat_tambah"),
+    path("pengaturan/sesi-sholat/<int:pk>/hapus/", sesi_sholat_hapus, name="sesi_sholat_hapus"),
     path("kiosk-akun/", kiosk_akun_list, name="kiosk_akun_list"),
     path("kiosk-akun/tambah/", kiosk_akun_create, name="kiosk_akun_create"),
     path("kiosk-akun/<int:pk>/reset/", kiosk_akun_reset, name="kiosk_akun_reset"),
