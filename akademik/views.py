@@ -202,14 +202,18 @@ def _proses_import_excel(file_obj, school):
         if not c.value:
             continue
         key = str(c.value).strip().lower()
-        if "nis" in key:
+        # PENTING: cek "kelamin" SEBELUM "nis" -- kata "Jenis" secara tidak
+        # sengaja mengandung substring "nis" ("je-NIS"), jadi kalau "nis"
+        # dicek duluan, kolom "Jenis Kelamin" bakal ketipu ketangkep jadi
+        # kolom NIS. Urutan ini genuinely penting, jangan dibalik lagi.
+        if "kelamin" in key or key == "jk":
+            header_map["jk"] = idx
+        elif "nis" in key:
             header_map["nis"] = idx
         elif "nama" in key:
             header_map["nama"] = idx
         elif "kelas" in key:
             header_map["kelas"] = idx
-        elif "kelamin" in key or key == "jk":
-            header_map["jk"] = idx
 
     kelas_map = {k.nama_kelas.strip().lower(): k for k in Kelas.objects.filter(school=school)}
     nis_terpakai = set(Siswa.objects.filter(school=school, nis__isnull=False).values_list("nis", flat=True))
