@@ -28,11 +28,17 @@
 
   {% if hasil %}
   <div class="bg-white border border-gray-200 rounded-2xl p-6">
-    <div class="flex gap-4 mb-5">
-      <div class="bg-stone-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold">{{ hasil.total }}</div><div class="text-xs text-gray-500 font-bold">Total Baris</div></div>
-      <div class="bg-emerald-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-emerald-600">{{ hasil.berhasil }}</div><div class="text-xs text-gray-500 font-bold">Berhasil</div></div>
-      <div class="bg-red-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-red-600">{{ hasil.gagal }}</div><div class="text-xs text-gray-500 font-bold">Gagal</div></div>
+    <div class="flex items-center justify-between mb-5">
+      <div class="flex gap-4">
+        <div class="bg-stone-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold">{{ hasil.total }}</div><div class="text-xs text-gray-500 font-bold">Total Baris</div></div>
+        <div class="bg-emerald-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-emerald-600">{{ hasil.berhasil }}</div><div class="text-xs text-gray-500 font-bold">Berhasil</div></div>
+        <div class="bg-red-50 rounded-xl px-5 py-3"><div class="text-lg font-extrabold text-red-600">{{ hasil.gagal }}</div><div class="text-xs text-gray-500 font-bold">Gagal</div></div>
+      </div>
+      {% if hasil.berhasil %}
+      <a href="{% url 'akademik:guru_import_csv' %}" class="px-4 py-2.5 rounded-lg bg-emerald-800 text-white text-sm font-bold hover:bg-emerald-900 flex-shrink-0">⬇ Export Username & Password (CSV)</a>
+      {% endif %}
     </div>
+    <p class="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4">⚠️ Unduh sekarang juga kalau perlu — tombol ini cuma berfungsi SEKALI dan hilang setelah halaman di-refresh/ditinggal, demi keamanan password.</p>
     <table class="w-full text-sm">
       <thead>
         <tr class="text-left text-[11px] uppercase text-gray-400 font-extrabold border-b border-gray-200">

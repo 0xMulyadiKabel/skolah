@@ -1,5 +1,6 @@
 # Simpan sebagai: akademik/views.py
 
+import csv
 from datetime import date
 
 from django.contrib import messages
@@ -247,12 +248,33 @@ def _proses_import_excel(file_obj, school):
             baris_hasil.append({"baris": row_num, "nama": nama, "nis": nis, "status": "gagal", "pesan": "; ".join(errors)})
             continue
 
-        Siswa.objects.create(school=school, nis=nis or None, nama=nama, kelas=kelas_obj, jenis_kelamin=jk, aktif=True)
+        siswa_obj = Siswa.objects.create(school=school, nis=nis or None, nama=nama, kelas=kelas_obj, jenis_kelamin=jk, aktif=True)
         if nis:
             nis_terpakai.add(nis)
             nis_dalam_file.add(nis)
+
+        # Konsisten sama migrasi Guru -- bikin akun login sekaligus, satu
+        # alur, nggak perlu Admin klik "Buat Akun" satu-satu abis migrasi
+        # buat ratusan siswa. Kalau NIS kosong, akun nggak bisa dibuat
+        # (username wajib ada), itu dicatat jelas di keterangan baris.
+        username_akun = ""
+        password_akun = ""
+        if nis:
+            from django.utils.crypto import get_random_string
+            password_akun = get_random_string(8)
+            user = User.objects.create_user(username=nis, password=password_akun, role=User.Role.SISWA, school=school)
+            siswa_obj.user = user
+            siswa_obj.save()
+            username_akun = nis
+            pesan = f"Tersimpan. Username: {nis}, Password: {password_akun}"
+        else:
+            pesan = "Tersimpan, TAPI akun login belum dibuat (NIS kosong) -- buat manual nanti dari Data Siswa."
+
         berhasil += 1
-        baris_hasil.append({"baris": row_num, "nama": nama, "nis": nis, "status": "berhasil", "pesan": "Tersimpan"})
+        baris_hasil.append({
+            "baris": row_num, "nama": nama, "nis": nis, "status": "berhasil", "pesan": pesan,
+            "username": username_akun, "password": password_akun,
+        })
 
     return {"total": total, "berhasil": berhasil, "gagal": gagal, "baris": baris_hasil}
 
@@ -268,6 +290,10 @@ def siswa_import(request):
         form = ImportSiswaForm(request.POST, request.FILES)
         if form.is_valid():
             hasil = _proses_import_excel(request.FILES["file_excel"], school)
+            # Simpan sementara ke SESSION (bukan database) -- cuma buat
+            # ngasih kesempatan Admin klik Export CSV abis ini. Password
+            # plaintext nggak boleh disimpan permanen di mana pun.
+            request.session["import_hasil_siswa"] = hasil["baris"]
             if hasil["berhasil"]:
                 messages.success(request, f"Import selesai: {hasil['berhasil']} siswa berhasil ditambahkan, {hasil['gagal']} baris gagal.")
             else:
@@ -276,6 +302,23 @@ def siswa_import(request):
         form = ImportSiswaForm()
 
     return render(request, "akademik/siswa_import.html", {"page_title": "Migrasi Data Siswa", "form": form, "hasil": hasil})
+
+
+@admin_required
+def siswa_import_csv(request):
+    baris = request.session.pop("import_hasil_siswa", None)
+    if not baris:
+        messages.error(request, "Tidak ada data migrasi untuk diunduh -- sesi sudah kedaluwarsa atau belum pernah migrasi. Migrasi ulang lalu langsung unduh.")
+        return redirect("akademik:siswa_import")
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="akun_siswa_hasil_migrasi.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Nama", "Username (NIS)", "Password"])
+    for b in baris:
+        if b.get("status") == "berhasil" and b.get("password"):
+            writer.writerow([b["nama"], b["username"], b["password"]])
+    return response
 
 
 @admin_required
@@ -668,6 +711,7 @@ def _proses_import_guru_excel(file_obj, school):
         baris_hasil.append({
             "baris": row_num, "nama": nama, "username": username, "status": "berhasil",
             "pesan": f"Tersimpan. Password sementara: {temp_password}",
+            "password": temp_password,
         })
 
     return {"total": total, "berhasil": berhasil, "gagal": gagal, "baris": baris_hasil}
@@ -734,6 +778,7 @@ def guru_import(request):
         form = ImportGuruForm(request.POST, request.FILES)
         if form.is_valid():
             hasil = _proses_import_guru_excel(request.FILES["file_excel"], school)
+            request.session["import_hasil_guru"] = hasil["baris"]
             if hasil["berhasil"]:
                 messages.success(request, f"Import selesai: {hasil['berhasil']} akun guru berhasil dibuat, {hasil['gagal']} baris gagal.")
             else:
@@ -741,3 +786,20 @@ def guru_import(request):
     else:
         form = ImportGuruForm()
     return render(request, "akademik/guru_import.html", {"page_title": "Migrasi Data Guru", "form": form, "hasil": hasil})
+
+
+@admin_required
+def guru_import_csv(request):
+    baris = request.session.pop("import_hasil_guru", None)
+    if not baris:
+        messages.error(request, "Tidak ada data migrasi untuk diunduh -- sesi sudah kedaluwarsa atau belum pernah migrasi. Migrasi ulang lalu langsung unduh.")
+        return redirect("akademik:guru_import")
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="akun_guru_hasil_migrasi.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Nama", "Username", "Password"])
+    for b in baris:
+        if b.get("status") == "berhasil" and b.get("password"):
+            writer.writerow([b["nama"], b["username"], b["password"]])
+    return response

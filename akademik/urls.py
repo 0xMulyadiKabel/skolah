@@ -18,6 +18,7 @@ urlpatterns = [
     path("siswa/<int:pk>/akun-toggle/", views.siswa_akun_toggle, name="siswa_akun_toggle"),
     path("siswa/import/", views.siswa_import, name="siswa_import"),
     path("siswa/import/template/", views.siswa_import_template, name="siswa_import_template"),
+    path("siswa/import/csv/", views.siswa_import_csv, name="siswa_import_csv"),
 
     path("kelas/", views.kelas_list, name="kelas_list"),
     path("kelas/tambah/", views.kelas_create, name="kelas_create"),
@@ -32,6 +33,7 @@ urlpatterns = [
     path("akun/guru/<int:pk>/toggle/", views.akun_guru_toggle_active, name="akun_guru_toggle"),
     path("akun/guru/import/", views.guru_import, name="guru_import"),
     path("akun/guru/import/template/", views.guru_import_template, name="guru_import_template"),
+    path("akun/guru/import/csv/", views.guru_import_csv, name="guru_import_csv"),
     path("akun/guru/<int:pk>/kartu/", views.guru_kartu, name="guru_kartu"),
     path("akun/guru/<int:pk>/kartu/qr.png", views.guru_kartu_qr_image, name="guru_kartu_qr_image"),
 
